@@ -10,9 +10,12 @@
     <div>
         <h1>AFD</h1><br>
 
-        <button onclick="adiciona_estado()">Novo estado</button><br>
-        <button onclick="criar_transicao()">Criar transicao</button><br>
-
+        <div style="margin: 10px;padding: 10px;">
+            <button onclick="adiciona_estado()">Novo estado</button>
+            <input type="text">
+            <button onclick="testa_palavra()">testar palavra</button>
+        </div>
+        
         <canvas id="meuCanvas" width="600" height="400"></canvas>
         <script src="afd.js"></script>
     </div>

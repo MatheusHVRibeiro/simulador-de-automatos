@@ -9,13 +9,24 @@ class Estado{
         this.y = 20;
         this.raio = 20;
         this.isDragging = false;
-        this.cor = "blue";
+        this.cor = "#00BFFF";
         this.transisao = new Map();
+        this.final = false;
     }
     adiciona_transisao(i,valor){
         console.log("estadoF: "+i+", valor: "+valor);
         this.transisao.set(i,valor);
+        desenha();
     } 
+    torna_final(){
+        this.final = !this.final;
+        console.log(this.final);
+        desenha();
+    }
+}
+
+function testa_palavra(){
+    console.log("chegou aqui");
 }
 
 function adiciona_estado(){
@@ -45,18 +56,57 @@ function desenha_circulo(i){
     automato[i].transisao.forEach((valor,estado) => {
         desenha_transicao(automato[i].x, automato[i].y,automato[estado].x, automato[estado].y,valor);
     });
+
+    let x = automato[i].x;
+    let y = automato[i].y;
     ctx.beginPath();
-    ctx.arc(automato[i].x, automato[i].y, automato[i].raio, 0, 2 * Math.PI);
+    ctx.arc(x, y, automato[i].raio, 0, 2 * Math.PI);
     ctx.fillStyle = automato[i].cor;
     ctx.fill();
     ctx.stroke();
 
     ctx.font = "12px Arial";
     ctx.fillStyle = "black";
-    ctx.fillText("S"+i, automato[i].x, automato[i].y);
+    ctx.fillText("S"+i, x, y);
+
+    if(automato[i].final){
+        console.log("chegou aqui");
+        ctx.beginPath();
+        ctx.arc(x, y, automato[i].raio+5, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    if(i == 0){
+        let lado = 20;
+        let altura = (Math.sqrt(3) / 2) * lado;
+        
+        x = x-automato[0].raio;
+        let x1 = x-altura;
+        let y1 = y-(lado/2);
+        let x2 = x-altura;
+        let y2 = y+(lado/2);
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.lineTo(x-lado*2, y);
+        ctx.stroke();
+    }
 }
 
 function desenha_transicao(x1,y1,x2,y2,valor){
+    
+    if(x1 == x2 && y1 == y2){
+        ctx.beginPath();
+        ctx.arc(x1+25, y1-20, 20, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.fillText(valor, x1+25, y1-45);
+    }else{
+        ctx.fillText(valor, ((x2+x1)/2)+10, ((y2+y1)/2)-10);
+    }
+    
     const angle = Math.atan2(y1 - y2, x1 - x2);
     x1 = x1 + Math.cos(angle) * (-20);
     y1 = y1 + Math.sin(angle) * (-20);
@@ -67,6 +117,7 @@ function desenha_transicao(x1,y1,x2,y2,valor){
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
+    
     
     let arrowPoint1X = x2 + Math.cos(angle - Math.PI / 6) * (20);
     let arrowPoint1Y = y2 + Math.sin(angle - Math.PI / 6) * (20);
@@ -80,7 +131,7 @@ function desenha_transicao(x1,y1,x2,y2,valor){
     ctx.closePath();
     ctx.fill();
     
-    ctx.fillText(valor, (x2+x1)/2, (y2+y1)/2);
+    
 }
 
 // Adiciona evento de clique no mouse
@@ -144,6 +195,14 @@ canvas.addEventListener("contextmenu", function(event) {
         if(mouseX >= left && mouseX <= right && mouseY >= topp && mouseY <= botton){
             estado_selecionado = true;
             menu.innerHTML = "S"+i+"<br>";
+
+            const final = document.createElement("button");
+            final.innerText = "tornar final";
+            final.value = i;
+            menu.appendChild(final);
+            final.addEventListener("click", function() {
+                automato[final.value].torna_final();
+            });
             
             const adiciona = document.createElement("button");
             adiciona.innerText = "adicionar transicao";
