@@ -14,7 +14,6 @@ class Estado{
         this.final = false;
     }
     adiciona_transisao(i,valor){
-        console.log("estadoF: "+i+", valor: "+valor);
         this.transisao.set(i,valor);
         desenha();
     } 
@@ -26,11 +25,35 @@ class Estado{
 }
 
 function testa_palavra(){
-    console.log("chegou aqui");
+    palavra = document.getElementById("palavra");
+    let j = 0;
+    let passou = false;
+    let erro = false;
+    for(i=0;i<palavra.value.length;i++){
+        console.log(palavra.value[i]);
+        automato[j].transisao.forEach((valor,estado) => {
+            if(palavra.value[i]==valor){
+                j = estado;
+                console.log("estado atual: "+estado);
+                passou = true;
+            }
+        });
+        if(!passou){
+            erro=true;
+        }
+        passou = false;
+    }
+    if(automato[j].final && !erro){
+        alert("palavra aceita");
+    }else{
+        alert("palavra recusada");
+    }
 }
 
-function adiciona_estado(){
+function adiciona_estado(x,y){
     const estado = new Estado();
+    estado.x = x;
+    estado.y = y;
     automato.push(estado);
     desenha(estado.x, estado.y, estado.raio);
 }
@@ -228,7 +251,7 @@ canvas.addEventListener("contextmenu", function(event) {
         const opcao1 = document.createElement("button");
         opcao1.innerText = "adiciona estado";
         opcao1.addEventListener("click", function(){
-            adiciona_estado();
+            adiciona_estado(mouseX,mouseY);
         });
         menu.appendChild(opcao1);
     }
