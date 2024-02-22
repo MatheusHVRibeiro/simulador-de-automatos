@@ -5,8 +5,8 @@ let automato = [];
 
 class Estado{
     constructor(){
-        this.x = 20;
-        this.y = 20;
+        this.x = 0;
+        this.y = 0;
         this.raio = 20;
         this.isDragging = false;
         this.cor = "#00BFFF";
@@ -17,6 +17,10 @@ class Estado{
         this.transisao.set(i,valor);
         desenha();
     } 
+    remove_transicao(i){
+        this.transisao.delete(i);
+        desenha();
+    }
     torna_final(){
         this.final = !this.final;
         console.log(this.final);
@@ -30,7 +34,36 @@ function testa_palavra(){
     let passou = false;
     let erro = false;
     for(i=0;i<palavra.value.length;i++){
-        console.log(palavra.value[i]);
+        automato[j].transisao.forEach((valor,estado) => {
+            if(palavra.value[i]==valor){
+                j = estado;
+                passou = true;
+            }
+        });
+        if(!passou){
+            erro=true;
+            break;
+        }
+        passou = false;
+    }
+    if(automato[j].final && !erro){
+        alert("palavra aceita");
+    }else{
+        alert("palavra recusada");
+    }
+}
+
+function debuga_palavra(){
+    palavra = document.getElementById("palavra");
+    let j = 0;
+    let passou = false;
+    let erro = false;
+    let continuar = true;
+    for(i=0;i<palavra.value.length;i++){
+        automato[j].cor = "#1E90FF";
+        desenha();
+        continuar = window.confirm("estado atual: "+estado+", caracter: "+palavra.value[i]);
+        
         automato[j].transisao.forEach((valor,estado) => {
             if(palavra.value[i]==valor){
                 j = estado;
@@ -40,8 +73,10 @@ function testa_palavra(){
         });
         if(!passou){
             erro=true;
+            break;
         }
         passou = false;
+        automato[j].cor = "#00BFFF";
     }
     if(automato[j].final && !erro){
         alert("palavra aceita");
@@ -233,16 +268,42 @@ canvas.addEventListener("contextmenu", function(event) {
             menu.appendChild(adiciona);
             adiciona.addEventListener("click", function() {
                 let lista_de_estados = [];
+                valor = document.createElement("input");
+                valor.placeholder = "valor";
+                valor.size = 3;
+                menu.appendChild(valor);
                 for(j=0;j<automato.length;j++){
                     lista_de_estados[j] = document.createElement("button");
                     lista_de_estados[j].innerText = "S"+j;
                     (function (indice) {
                         lista_de_estados[j].addEventListener("click", function(){
-                            automato[adiciona.value].adiciona_transisao(indice,"0");
+                            automato[adiciona.value].adiciona_transisao(indice,valor.value);
                         });
                     })(j);
                     menu.appendChild(lista_de_estados[j]);
                 }
+            });
+
+            const remove = document.createElement("button");
+            remove.innerText = "remover transicao";
+            remove.value = i;
+            menu.appendChild(remove);
+            menu.appendChild(document.createElement("br"));
+            remove.addEventListener("click", function() {
+                let lista_de_estados = [];
+                let j = 0;
+                automato[remove.value].transisao.forEach((char,estado) => {
+                    lista_de_estados[j] = document.createElement("button");
+                    lista_de_estados[j].innerText = "S"+estado;
+                    (function (indice) {
+                        lista_de_estados[j].addEventListener("click", function(){
+                            automato[remove.value].remove_transicao(estado);
+                        });
+                    })(estado);
+                    menu.appendChild(lista_de_estados[j]);
+                    ++j;
+                });
+                
             });
             
         }
