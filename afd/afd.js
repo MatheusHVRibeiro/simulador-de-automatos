@@ -3,6 +3,15 @@ const ctx = canvas.getContext("2d");
 
 let automato = [];
 
+class transicao{
+    constructor(origem, destino, valor){
+        this.origem = origem;
+        this.destino = destino;
+        this.valor = valor;
+    }
+}
+
+
 class Estado{
     constructor(){
         this.x = 0;
