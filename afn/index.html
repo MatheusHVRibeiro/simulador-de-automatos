@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <title>AFN</title>
+</head>
+<body>
+    <div>
+        <h1>AFN</h1><br>
+
+        <div style="margin: 10px;padding: 10px;" id="menu">
+            <button onclick="adiciona_estado(40,40)">Novo estado</button>
+            <input type="text" id="palavra">
+            <button onclick="testa_palavra()">testar palavra</button>
+            <button onclick="debuga_palavra()">debugar palavra</button>
+        </div>
+        
+        <canvas id="meuCanvas" width="600" height="400"></canvas>
+        <script src="afn.js"></script>
+    </div>
+</body>
+</html>
