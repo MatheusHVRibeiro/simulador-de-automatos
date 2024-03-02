@@ -39,7 +39,7 @@ class Estado{
         desenha();
     } 
     remove_transicao(i){
-        this.transicoes = this.transicoes.filter(objeto => objeto.origem !== this.numero && objeto.destino !== i);
+        this.transicoes = this.transicoes.filter(objeto => objeto.numero !== i);
         desenha();
     }
     torna_final(){
@@ -297,10 +297,10 @@ canvas.addEventListener("contextmenu", function(event) {
                 let j = 0;
                 automato[remove.value].transicoes.forEach(transicao => {
                     lista_de_estados[j] = document.createElement("button");
-                    lista_de_estados[j].innerText = "S"+transicao.destino;
+                    lista_de_estados[j].innerText = "S"+transicao.destino+"("+transicao.valor+")";
                     (function (indice) {
                         lista_de_estados[j].addEventListener("click", function(){
-                            automato[remove.value].remove_transicao(transicao.destino);
+                            automato[remove.value].remove_transicao(transicao.numero);
                         });
                     })(transicao.destino);
                     menu.appendChild(lista_de_estados[j]);

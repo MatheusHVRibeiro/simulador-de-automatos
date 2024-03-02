@@ -25,17 +25,7 @@ class Estado{
         this.final = false;
     }
     adiciona_transisao(i,valor){
-        let valida = true;
-        this.transicoes.forEach(transicao => {
-            if(transicao.valor == valor){
-                valida = false;
-                alert("transisao invalida para AFD");
-            }
-        });
-        if(valida){
-            this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
-        }
-        
+        this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
         desenha();
     } 
     remove_transicao(i){
