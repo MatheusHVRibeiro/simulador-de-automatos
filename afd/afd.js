@@ -1,6 +1,9 @@
 const canvas = document.getElementById("meuCanvas");
 const ctx = canvas.getContext("2d");
+const debugCanvas = document.getElementById("debugCanvas");
+const debugCtx = debugCanvas.getContext("2d");
 
+let iteradorDebug;
 let automato = [];
 
 class Transicao{
@@ -32,31 +35,46 @@ class Estado{
                 alert("transisao invalida para AFD");
             }
         });
+        if(valor == ""){
+            valida = false;
+            alert("transisao invalida para AFD");
+        }
         if(valida){
             this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
         }
         
-        desenha();
+        desenha(ctx);
     } 
     remove_transicao(i){
         this.transicoes = this.transicoes.filter(objeto => objeto.numero !== i);
-        desenha();
+        for(i=0;i<this.transicoes.length;++i){
+            this.transicoes[i].numero=i;
+        }
+        desenha(ctx);
     }
     torna_final(){
         this.final = !this.final;
-        desenha();
+        desenha(ctx);
     }
+}
+
+function adiciona_estado(x,y){
+    const estado = new Estado(automato.length);
+    estado.x = x;
+    estado.y = y;
+    automato.push(estado);
+    desenha(ctx);
 }
 
 function testa_palavra(){
     palavra = document.getElementById("palavra");
-    let j = 0;
+    let estadoAtual = 0;
     let passou = false;
     let erro = false;
     for(i=0;i<palavra.value.length;i++){
-        automato[j].transicoes.forEach(transicao => {
+        automato[estadoAtual].transicoes.forEach(transicao => {
             if(palavra.value[i]==transicao.valor){
-                j = transicao.destino;
+                estadoAtual = transicao.destino;
                 passou = true;
             }
         });
@@ -66,22 +84,124 @@ function testa_palavra(){
         }
         passou = false;
     }
-    if(automato[j].final && !erro){
+    if(automato[estadoAtual].final && !erro){
         alert("palavra aceita");
     }else{
         alert("palavra recusada");
     }
 }
 
-function adiciona_estado(x,y){
-    const estado = new Estado(automato.length);
-    estado.x = x;
-    estado.y = y;
-    automato.push(estado);
-    desenha(estado.x, estado.y, estado.raio);
+function debuga_palavra(){
+    palavra = document.getElementById("palavra");
+    if(canvas.style.display == "block" && debugCanvas.style.display == "none"){
+        palavra.readOnly = true;
+
+        canvas.style.display = "none";
+        debugCanvas.style.display = "block";
+        iteradorDebug = 0;
+        desenha_etapa();
+    }else{
+        palavra.readOnly = false;
+
+        canvas.style.display = "block";
+        debugCanvas.style.display = "none";
+
+        desenha(ctx);
+    }       
 }
 
-// Função para obter as coordenadas do mouse no canvas
+function desenha_botoes(contexto){
+    let text = "Anterior";
+    let x = 20;
+    let y = canvas.height-20-50;
+    let width = 100;
+    let height = 50;
+    contexto.fillStyle = 'blue'; 
+    contexto.fillRect(x, y, width, height);
+
+    contexto.fillStyle = 'white';
+    contexto.font = '20px Arial';
+    contexto.textAlign = 'center';
+    contexto.textBaseline = 'middle';
+    contexto.fillText(text, x + width / 2, y + height / 2);
+
+    text = "Proximo";
+    x += 110;
+    contexto.fillStyle = 'blue'; 
+    contexto.fillRect(x, y, width, height);
+
+    contexto.fillStyle = 'white';
+    contexto.font = '20px Arial';
+    contexto.textAlign = 'center';
+    contexto.textBaseline = 'middle';
+    contexto.fillText(text, x + width / 2, y + height / 2);
+}
+
+debugCanvas.addEventListener("mousedown", function (e) {
+    const mousePos = getMousePos(debugCanvas, e);
+    
+    let left = 20;
+    let right = 120;
+    let topp = debugCanvas.height-20-50;
+    let botton = debugCanvas.height-20;
+    if(mousePos.x >= left && mousePos.x <= right && mousePos.y >= topp && mousePos.y <= botton){
+        iteradorDebug-=1;
+        desenha_etapa();
+    }else if(mousePos.x >= left+110 && mousePos.x <= right+110 && mousePos.y >= topp && mousePos.y <= botton){
+        iteradorDebug+=1;
+        desenha_etapa();
+    }
+
+});
+
+function desenha_palavra(){
+    palavra = document.getElementById("palavra").value;
+
+    debugCtx.font = "20px Arial";
+    debugCtx.fillStyle = "black";
+    debugCtx.textAlign = 'end';
+    debugCtx.fillText(palavra,debugCanvas.width-10, debugCanvas.height-20);
+
+    debugCtx.fillStyle = "red";
+    let posisaoCaracter = debugCtx.measureText(palavra).width - debugCtx.measureText(palavra.slice(0,iteradorDebug+1)).width;
+    
+    debugCtx.fillText(palavra[iteradorDebug],debugCanvas.width-10-posisaoCaracter, debugCanvas.height-20);
+}
+
+function desenha_etapa(){
+    palavra = document.getElementById("palavra").value;
+    let estadoAtual = 0;
+    let passou = false;
+    let erro = false;
+    if(iteradorDebug < palavra.length){
+        for(i=0;i<iteradorDebug;i++){
+            automato[estadoAtual].transicoes.forEach(transicao => {
+                if(palavra[i]==transicao.valor){
+                    estadoAtual = transicao.destino;
+                    passou = true;
+                }
+            });
+            if(!passou){
+                erro=true;
+                break;
+            }
+            passou = false;
+        }
+        automato[estadoAtual].cor = "#00FA9A";
+    }else{
+        if(automato[estadoAtual].final && !erro){
+            alert("palavra aceita");
+        }else{
+            alert("palavra recusada");
+        }
+    }
+
+    desenha(debugCtx);
+    desenha_palavra();
+    desenha_botoes(debugCtx);
+    automato[estadoAtual].cor = "#00BFFF";
+}
+
 function getMousePos(canvas, event) {
     return {
         x: event.clientX - canvas.getBoundingClientRect().left,
@@ -89,16 +209,16 @@ function getMousePos(canvas, event) {
     };
 }
 
-
-function desenha() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function desenha(contexto) {
+    contexto.clearRect(0, 0, canvas.width, canvas.height);
+    contexto.textAlign = 'center';
+    contexto.textBaseline = 'middle';
     for(i=0;i<automato.length;i++){
-        desenha_circulo(i);  
+        desenha_circulo(contexto,i);  
     }
-
 }
 
-function desenha_circulo(i){
+function desenha_circulo(contexto,i){
     ignorar = [];
     automato[i].transicoes.forEach(transicao => {
         if(!ignorar.includes(transicao.numero)){
@@ -110,29 +230,29 @@ function desenha_circulo(i){
                     label += igual.valor+","
                 });
                 label+=transicao.valor;
-                desenha_transicao(automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,label);
+                desenha_transicao(contexto,automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,label);
             }else{
-                desenha_transicao(automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,transicao.valor);
+                desenha_transicao(contexto,automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,transicao.valor);
             }
         }  
     });
 
     let x = automato[i].x;
     let y = automato[i].y;
-    ctx.beginPath();
-    ctx.arc(x, y, automato[i].raio, 0, 2 * Math.PI);
-    ctx.fillStyle = automato[i].cor;
-    ctx.fill();
-    ctx.stroke();
+    contexto.beginPath();
+    contexto.arc(x, y, automato[i].raio, 0, 2 * Math.PI);
+    contexto.fillStyle = automato[i].cor;
+    contexto.fill();
+    contexto.stroke();
 
-    ctx.font = "12px Arial";
-    ctx.fillStyle = "black";
-    ctx.fillText("S"+i, x, y);
+    contexto.font = "12px Arial";
+    contexto.fillStyle = "black";
+    contexto.fillText("S"+i, x, y);
 
     if(automato[i].final){
-        ctx.beginPath();
-        ctx.arc(x, y, automato[i].raio+5, 0, 2 * Math.PI);
-        ctx.stroke();
+        contexto.beginPath();
+        contexto.arc(x, y, automato[i].raio+5, 0, 2 * Math.PI);
+        contexto.stroke();
     }
 
     if(i == 0){
@@ -145,27 +265,27 @@ function desenha_circulo(i){
         let x2 = x-altura;
         let y2 = y+(lado/2);
 
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.closePath();
-        ctx.lineTo(x-lado*2, y);
-        ctx.stroke();
+        contexto.beginPath();
+        contexto.moveTo(x, y);
+        contexto.lineTo(x1, y1);
+        contexto.lineTo(x2, y2);
+        contexto.closePath();
+        contexto.lineTo(x-lado*2, y);
+        contexto.stroke();
     }
 }
 
-function desenha_transicao(x1,y1,x2,y2,valor){
+function desenha_transicao(contexto,x1,y1,x2,y2,valor){
     let fugaX = Math.sign(x1-x2)*25;
     let fugaY = Math.sign(y1-y2)*25;
 
     if(x1 == x2 && y1 == y2){
-        ctx.beginPath();
-        ctx.arc(x1+25, y1-20, 20, 0, 2 * Math.PI);
-        ctx.stroke();
-        ctx.fillText(valor, x1+25, y1-45);
+        contexto.beginPath();
+        contexto.arc(x1+25, y1-20, 20, 0, 2 * Math.PI);
+        contexto.stroke();
+        contexto.fillText(valor, x1+25, y1-45);
     }else{
-        ctx.fillText(valor, ((x1+x2)/2)+fugaX, ((y1+y2)/2)-fugaY);
+        contexto.fillText(valor, ((x1+x2)/2)+fugaX, ((y1+y2)/2)-fugaY);
     }
     
     const angle = Math.atan2(((y1+y2)/2)-fugaY - y2, ((x1+x2)/2)+fugaX - x2);
@@ -174,10 +294,10 @@ function desenha_transicao(x1,y1,x2,y2,valor){
     x2 = x2 + Math.cos(angle) * (20);
     y2 = y2 + Math.sin(angle) * (20);
 
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.quadraticCurveTo(((x1+x2)/2)+fugaX, ((y1+y2)/2)-fugaY, x2, y2);
-    ctx.stroke();
+    contexto.beginPath();
+    contexto.moveTo(x1, y1);
+    contexto.quadraticCurveTo(((x1+x2)/2)+fugaX, ((y1+y2)/2)-fugaY, x2, y2);
+    contexto.stroke();
     
     
     let arrowPoint1X = x2 + Math.cos(angle - Math.PI / 6) * (10);
@@ -185,12 +305,12 @@ function desenha_transicao(x1,y1,x2,y2,valor){
     let arrowPoint2X = x2 + Math.cos(angle + Math.PI / 6) * (10);
     let arrowPoint2Y = y2 + Math.sin(angle + Math.PI / 6) * (10);
     
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(arrowPoint1X, arrowPoint1Y);
-    ctx.lineTo(arrowPoint2X, arrowPoint2Y);
-    ctx.closePath();
-    ctx.fill();
+    contexto.beginPath();
+    contexto.moveTo(x2, y2);
+    contexto.lineTo(arrowPoint1X, arrowPoint1Y);
+    contexto.lineTo(arrowPoint2X, arrowPoint2Y);
+    contexto.closePath();
+    contexto.fill();
     
     
 }
@@ -223,7 +343,7 @@ canvas.addEventListener("mousemove", function (e) {
             const mousePos = getMousePos(canvas, e);
             automato[i].x = mousePos.x;
             automato[i].y = mousePos.y;
-            desenha();
+            desenha(ctx);
         }
     }
 });
