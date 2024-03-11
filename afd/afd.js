@@ -118,6 +118,8 @@ function desenha_botoes(contexto){
     let height = 50;
     contexto.fillStyle = 'blue'; 
     contexto.fillRect(x, y, width, height);
+    contexto.fillStyle = 'black';
+    contexto.strokeRect(x, y, width, height);
 
     contexto.fillStyle = 'white';
     contexto.font = '20px Arial';
@@ -129,6 +131,8 @@ function desenha_botoes(contexto){
     x += 110;
     contexto.fillStyle = 'blue'; 
     contexto.fillRect(x, y, width, height);
+    contexto.fillStyle = 'black';
+    contexto.strokeRect(x, y, width, height);
 
     contexto.fillStyle = 'white';
     contexto.font = '20px Arial';
@@ -138,6 +142,7 @@ function desenha_botoes(contexto){
 }
 
 debugCanvas.addEventListener("mousedown", function (e) {
+    tamanho = document.getElementById("palavra").value.length;
     const mousePos = getMousePos(debugCanvas, e);
     
     let left = 20;
@@ -145,13 +150,16 @@ debugCanvas.addEventListener("mousedown", function (e) {
     let topp = debugCanvas.height-20-50;
     let botton = debugCanvas.height-20;
     if(mousePos.x >= left && mousePos.x <= right && mousePos.y >= topp && mousePos.y <= botton){
-        iteradorDebug-=1;
-        desenha_etapa();
+        if(iteradorDebug>0){
+            iteradorDebug-=1;
+            desenha_etapa();
+        }  
     }else if(mousePos.x >= left+110 && mousePos.x <= right+110 && mousePos.y >= topp && mousePos.y <= botton){
-        iteradorDebug+=1;
-        desenha_etapa();
+        if(iteradorDebug<tamanho){
+            iteradorDebug+=1;
+            desenha_etapa();
+        } 
     }
-
 });
 
 function desenha_palavra(){
@@ -162,9 +170,10 @@ function desenha_palavra(){
     debugCtx.textAlign = 'end';
     debugCtx.fillText(palavra,debugCanvas.width-10, debugCanvas.height-20);
 
-    debugCtx.fillStyle = "red";
     let posisaoCaracter = debugCtx.measureText(palavra).width - debugCtx.measureText(palavra.slice(0,iteradorDebug+1)).width;
+    debugCtx.strokeRect(debugCanvas.width-10-posisaoCaracter-debugCtx.measureText("o").width, debugCanvas.height-35, debugCtx.measureText("o").width, debugCtx.measureText("o").width*2);
     
+    debugCtx.fillStyle = "red";
     debugCtx.fillText(palavra[iteradorDebug],debugCanvas.width-10-posisaoCaracter, debugCanvas.height-20);
 }
 
@@ -173,22 +182,23 @@ function desenha_etapa(){
     let estadoAtual = 0;
     let passou = false;
     let erro = false;
-    if(iteradorDebug < palavra.length){
-        for(i=0;i<iteradorDebug;i++){
-            automato[estadoAtual].transicoes.forEach(transicao => {
-                if(palavra[i]==transicao.valor){
-                    estadoAtual = transicao.destino;
-                    passou = true;
-                }
-            });
-            if(!passou){
-                erro=true;
-                break;
+    
+    for(i=0;i<iteradorDebug;i++){
+        automato[estadoAtual].transicoes.forEach(transicao => {
+            if(palavra[i]==transicao.valor){
+                estadoAtual = transicao.destino;
+                passou = true;
             }
-            passou = false;
+        });
+        if(!passou){
+            erro=true;
+            break;
         }
-        automato[estadoAtual].cor = "#00FA9A";
-    }else{
+        passou = false;
+    }
+    automato[estadoAtual].cor = "#00FA9A";
+
+    if(iteradorDebug >= palavra.length){
         if(automato[estadoAtual].final && !erro){
             alert("palavra aceita");
         }else{
@@ -448,4 +458,78 @@ canvas.addEventListener("contextmenu", function(event) {
             document.body.removeChild(menu);
         }
     });
+});
+
+function exportar(){
+    const jsonData = automato;
+
+    // Converte o objeto JSON em uma string
+    const jsonString = JSON.stringify(jsonData);
+
+    // Cria um Blob com a string JSON
+    const blob = new Blob([jsonString], { type: "application/json" });
+
+    // Cria um link de download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "AFD.json"; // Nome do arquivo a ser baixado
+
+    // Adiciona o link à página e simula o clique
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpa o URL do objeto Blob após o download
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById("uploadInput").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (!file) return; // Se nenhum arquivo foi selecionado, saia da função
+
+    // Cria um objeto FileReader para ler o conteúdo do arquivo
+    const reader = new FileReader();
+
+    // Define a função de callback a ser chamada quando a leitura for concluída
+    reader.onload = function(event) {
+        const jsonData = JSON.parse(event.target.result);
+        automato = jsonData;
+        automato.forEach(estado=>{
+            estado.adiciona_transisao = function(i,valor){
+                let valida = true;
+                this.transicoes.forEach(transicao => {
+                    if(transicao.valor == valor){
+                        valida = false;
+                        alert("transisao invalida para AFD");
+                    }
+                });
+                if(valor == ""){
+                    valida = false;
+                    alert("transisao invalida para AFD");
+                }
+                if(valida){
+                    this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
+                }
+                
+                desenha(ctx);
+            };
+
+            estado.remove_transicao = function(i){
+                this.transicoes = this.transicoes.filter(objeto => objeto.numero !== i);
+                for(i=0;i<this.transicoes.length;++i){
+                    this.transicoes[i].numero=i;
+                }
+                desenha(ctx);
+            };
+
+            estado.torna_final = function(){
+                this.final = !this.final;
+                desenha(ctx);
+            };
+        });
+        desenha(ctx);
+    };
+
+    // Inicia a leitura do arquivo como texto
+    reader.readAsText(file);
 });
