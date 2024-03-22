@@ -1,5 +1,6 @@
 body{
     background-color: #F0FFFF;
+    text-align: center;
 }
 div, canvas{
     border-width: 3px;
@@ -48,5 +49,4 @@ h1{
                      1px -1px 0 #3498db,
                     -1px  1px 0 #3498db,
                      1px  1px 0 #3498db;
-    display: inline;
 }

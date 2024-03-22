@@ -116,7 +116,7 @@ function desenha_botoes(contexto){
     let y = canvas.height-20-50;
     let width = 100;
     let height = 50;
-    contexto.fillStyle = 'blue'; 
+    contexto.fillStyle = '#3498db'; 
     contexto.fillRect(x, y, width, height);
     contexto.fillStyle = 'black';
     contexto.strokeRect(x, y, width, height);
@@ -129,7 +129,7 @@ function desenha_botoes(contexto){
 
     text = "Proximo";
     x += 110;
-    contexto.fillStyle = 'blue'; 
+    contexto.fillStyle = '3498db'; 
     contexto.fillRect(x, y, width, height);
     contexto.fillStyle = 'black';
     contexto.strokeRect(x, y, width, height);

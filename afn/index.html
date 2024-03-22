@@ -4,20 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
     <title>AFN</title>
 </head>
 <body>
     <div>
-        <h1>AFN</h1><br>
+        <a href="../index.html">
+            <button>
+                <i class="fas fa-home icone-home"></i>
+            </button>
+        </a>
 
-        <div style="margin: 10px;padding: 10px;" id="menu">
+        <h1>Automatos Finitos Não Deterministicos</h1><br>
+
+        <div id="menu">
             <button onclick="adiciona_estado(40,40)">Novo estado</button>
             <input type="text" id="palavra">
             <button onclick="testa_palavra()">testar palavra</button>
             <button onclick="debuga_palavra()">debugar palavra</button>
         </div>
         
-        <canvas id="meuCanvas" width="600" height="400"></canvas>
+        <canvas id="meuCanvas" width="800" height="400" style="display: block;"></canvas>
+        <canvas id="debugCanvas" width="800" height="400" style="display: none;"></canvas>
+        <button id="download" onclick="exportar()">Baixar AFN</button><br>
+        <label for="uploadInput">Importar AFN</label>
+        <input type="file" id="uploadInput" accept=".json" style="display: none;">
         <script src="afn.js"></script>
     </div>
 </body>
