@@ -28,20 +28,10 @@ class Estado{
         this.final = false;
     }
     adiciona_transisao(i,valor){
-        let valida = true;
-        this.transicoes.forEach(transicao => {
-            if(transicao.valor == valor){
-                valida = false;
-                alert("transisao invalida para AFD");
-            }
-        });
         if(valor == ""){
-            valida = false;
-            alert("transisao invalida para AFD");
+            valor = "λ";
         }
-        if(valida){
-            this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
-        }
+        this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
         
         desenha(ctx);
     } 
@@ -67,24 +57,31 @@ function adiciona_estado(x,y){
 }
 
 function testa_palavra(){
-    palavra = document.getElementById("palavra");
-    let estadoAtual = 0;
-    let passou = false;
+    palavra = document.getElementById("palavra").value;
+    let estadosAtuais = [0];
     let erro = false;
-    for(i=0;i<palavra.value.length;i++){
-        automato[estadoAtual].transicoes.forEach(transicao => {
-            if(palavra.value[i]==transicao.valor){
-                estadoAtual = transicao.destino;
-                passou = true;
-            }
+
+    for (i = 0; i < palavra.length; i++) {
+        const proximosEstados = [];
+
+        estadosAtuais.forEach(estado => {
+            automato[estado].transicoes.forEach(transicao => {
+                if (palavra[i] === transicao.valor || transicao.valor == "λ") {
+                    proximosEstados.push(transicao.destino);
+                }
+            });
         });
-        if(!passou){
-            erro=true;
+
+        if (proximosEstados.length === 0) {
+            erro = true; // Se não houver transição válida para o próximo caractere, erro
             break;
-        }
-        passou = false;
+        }   
+        estadosAtuais = proximosEstados; // Atualiza os estados atuais para os próximos estados
+        console.log(proximosEstados);
     }
-    if(automato[estadoAtual].final && !erro){
+    const aceita = estadosAtuais.some(estado => automato[estado].final);
+
+    if(aceita && !erro){
         alert("palavra aceita");
     }else{
         alert("palavra recusada");
@@ -129,7 +126,7 @@ function desenha_botoes(contexto){
 
     text = "Proximo";
     x += 110;
-    contexto.fillStyle = '3498db'; 
+    contexto.fillStyle = '#3498db'; 
     contexto.fillRect(x, y, width, height);
     contexto.fillStyle = 'black';
     contexto.strokeRect(x, y, width, height);
@@ -179,27 +176,34 @@ function desenha_palavra(){
 
 function desenha_etapa(){
     palavra = document.getElementById("palavra").value;
-    let estadoAtual = 0;
-    let passou = false;
+    let estadosAtuais = [0];
     let erro = false;
     
-    for(i=0;i<iteradorDebug;i++){
-        automato[estadoAtual].transicoes.forEach(transicao => {
-            if(palavra[i]==transicao.valor){
-                estadoAtual = transicao.destino;
-                passou = true;
-            }
+    for (i = 0; i < iteradorDebug; i++) {
+        const proximosEstados = [];
+
+        estadosAtuais.forEach(estado => {
+            automato[estado].transicoes.forEach(transicao => {
+                if (palavra[i] === transicao.valor || transicao.valor == "λ") {
+                    proximosEstados.push(transicao.destino);
+                }
+            });
         });
-        if(!passou){
-            erro=true;
+
+        if (proximosEstados.length === 0) {
+            erro = true; // Se não houver transição válida para o próximo caractere, erro
             break;
-        }
-        passou = false;
+        }   
+        estadosAtuais = proximosEstados; // Atualiza os estados atuais para os próximos estados
+        console.log(proximosEstados);
     }
-    automato[estadoAtual].cor = "#00FA9A";
+    estadosAtuais.forEach(estado =>{
+        automato[estado].cor = "#00FA9A";
+    });
 
     if(iteradorDebug >= palavra.length){
-        if(automato[estadoAtual].final && !erro){
+        const aceita = estadosAtuais.some(estado => automato[estado].final);
+        if(aceita && !erro){
             alert("palavra aceita");
         }else{
             alert("palavra recusada");
@@ -209,7 +213,9 @@ function desenha_etapa(){
     desenha(debugCtx);
     desenha_palavra();
     desenha_botoes(debugCtx);
-    automato[estadoAtual].cor = "#00BFFF";
+    estadosAtuais.forEach(estado =>{
+        automato[estado].cor = "#00BFFF";
+    });
 }
 
 function getMousePos(canvas, event) {
@@ -498,15 +504,9 @@ document.getElementById("uploadInput").addEventListener("change", function(event
         automato.forEach(estado=>{
             estado.adiciona_transisao = function(i,valor){
                 let valida = true;
-                this.transicoes.forEach(transicao => {
-                    if(transicao.valor == valor){
-                        valida = false;
-                        alert("transisao invalida para AFD");
-                    }
-                });
                 if(valor == ""){
                     valida = false;
-                    alert("transisao invalida para AFD");
+                    alert("transisao invalida para AFN");
                 }
                 if(valida){
                     this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));

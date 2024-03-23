@@ -380,6 +380,7 @@ canvas.addEventListener("contextmenu", function(event) {
     let posicaoY = event.clientY-40;
     // Cria um menu de contexto personalizado
     const menu = document.createElement("div");
+    menu.className = "menu";
     menu.style.position = "absolute";
     menu.style.backgroundColor = "white";
     menu.style.border = "1px solid black";
