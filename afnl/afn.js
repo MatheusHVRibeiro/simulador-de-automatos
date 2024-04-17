@@ -503,14 +503,10 @@ document.getElementById("uploadInput").addEventListener("change", function(event
         automato = jsonData;
         automato.forEach(estado=>{
             estado.adiciona_transisao = function(i,valor){
-                let valida = true;
                 if(valor == ""){
-                    valida = false;
-                    alert("transisao invalida para AFN");
+                    valor = "λ";
                 }
-                if(valida){
-                    this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
-                }
+                this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
                 
                 desenha(ctx);
             };

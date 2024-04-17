@@ -18,3 +18,10 @@ function afnl_on(){
 function afnl_out(){
     document.getElementById("afnl").innerText = "AFNλ";
 }
+
+function mt_on(){
+    document.getElementById("mt").innerHTML = "Máquinas De Turing";
+}
+function mt_out(){
+    document.getElementById("mt").innerText = "MT";
+}

@@ -4,16 +4,18 @@ const debugCanvas = document.getElementById("debugCanvas");
 const debugCtx = debugCanvas.getContext("2d");
 
 let iteradorDebug;
+let cabecoteLeitura;
 let automato = [];
 
 class Transicao{
-    constructor(origem, destino, valor,numero){
+    constructor(origem, destino,numero,leitura,escrita,direcao){
         this.origem = origem;
         this.destino = destino;
-        this.valor = valor;
         this.numero = numero;
+        this.leitura = leitura;
+        this.escrita = escrita;
+        this.direcao = direcao;
     }
-
 }
 
 class Estado{
@@ -27,22 +29,21 @@ class Estado{
         this.transicoes = [];
         this.final = false;
     }
-    adiciona_transisao(i,valor){
+    adiciona_transisao(i,leitura,escrita,direcao){
         let valida = true;
         this.transicoes.forEach(transicao => {
-            if(transicao.valor == valor){
+            if(transicao.leitura == leitura){
                 valida = false;
-                alert("transisao invalida para AFD");
+                alert("transisao invalida para MT");
             }
         });
-        if(valor == ""){
-            valida = false;
-            alert("transisao invalida para AFD");
+        if(escrita == ""){
+            escrita = "□";
         }
         if(valida){
-            this.transicoes.push(new Transicao(this.numero,i,valor,this.transicoes.length));
+            this.transicoes.push(new Transicao(this.numero,i,this.transicoes.length,leitura,escrita,direcao));
+            console.log(this.transicoes);
         }
-        
         desenha(ctx);
     } 
     remove_transicao(i){
@@ -71,10 +72,18 @@ function testa_palavra(){
     let estadoAtual = 0;
     let passou = false;
     let erro = false;
-    for(i=0;i<palavra.value.length;i++){
+    let cabecoteLeitura = 0;
+    do{
+        passou = false;
         automato[estadoAtual].transicoes.forEach(transicao => {
-            if(palavra.value[i]==transicao.valor){
+            if(palavra.value[cabecoteLeitura]==transicao.leitura){
+                palavra.value[cabecoteLeitura] = transicao.escrita;
                 estadoAtual = transicao.destino;
+                if(transicao.direcao == "D"){
+                    cabecoteLeitura+=1;
+                }else if(transicao.direcao == "E"){
+                    cabecoteLeitura-=1;
+                }
                 passou = true;
             }
         });
@@ -82,8 +91,8 @@ function testa_palavra(){
             erro=true;
             break;
         }
-        passou = false;
-    }
+    }while(passou);
+
     if(automato[estadoAtual].final && !erro){
         alert("palavra aceita");
     }else{
@@ -98,7 +107,7 @@ function debuga_palavra(){
 
         canvas.style.display = "none";
         debugCanvas.style.display = "block";
-        iteradorDebug = 0;
+        cabecoteLeitura = 0;
         desenha_etapa();
     }else{
         palavra.readOnly = false;
@@ -150,13 +159,13 @@ debugCanvas.addEventListener("mousedown", function (e) {
     let topp = debugCanvas.height-20-50;
     let botton = debugCanvas.height-20;
     if(mousePos.x >= left && mousePos.x <= right && mousePos.y >= topp && mousePos.y <= botton){
-        if(iteradorDebug>0){
-            iteradorDebug-=1;
+        if(cabecoteLeitura>0){
+            cabecoteLeitura-=1;
             desenha_etapa();
         }  
     }else if(mousePos.x >= left+110 && mousePos.x <= right+110 && mousePos.y >= topp && mousePos.y <= botton){
-        if(iteradorDebug<tamanho){
-            iteradorDebug+=1;
+        if(cabecoteLeitura<tamanho){
+            cabecoteLeitura+=1;
             desenha_etapa();
         } 
     }
@@ -170,11 +179,11 @@ function desenha_palavra(){
     debugCtx.textAlign = 'end';
     debugCtx.fillText(palavra,debugCanvas.width-10, debugCanvas.height-20);
 
-    let posisaoCaracter = debugCtx.measureText(palavra).width - debugCtx.measureText(palavra.slice(0,iteradorDebug+1)).width;
+    let posisaoCaracter = debugCtx.measureText(palavra).width - debugCtx.measureText(palavra.slice(0,cabecoteLeitura+1)).width;
     debugCtx.strokeRect(debugCanvas.width-10-posisaoCaracter-debugCtx.measureText("o").width, debugCanvas.height-35, debugCtx.measureText("o").width, debugCtx.measureText("o").width*2);
     
     debugCtx.fillStyle = "red";
-    debugCtx.fillText(palavra[iteradorDebug],debugCanvas.width-10-posisaoCaracter, debugCanvas.height-20);
+    debugCtx.fillText(palavra[cabecoteLeitura],debugCanvas.width-10-posisaoCaracter, debugCanvas.height-20);
 }
 
 function desenha_etapa(){
@@ -182,11 +191,18 @@ function desenha_etapa(){
     let estadoAtual = 0;
     let passou = false;
     let erro = false;
-    
-    for(i=0;i<iteradorDebug;i++){
+    let i = 0;
+    do{
+        passou = false;
         automato[estadoAtual].transicoes.forEach(transicao => {
-            if(palavra[i]==transicao.valor){
+            if(palavra[cabecoteLeitura]==transicao.leitura){
+                palavra[cabecoteLeitura] = transicao.escrita;
                 estadoAtual = transicao.destino;
+                if(transicao.direcao == "D"){
+                    cabecoteLeitura+=1;
+                }else if(transicao.direcao == "E"){
+                    cabecoteLeitura-=1;
+                }
                 passou = true;
             }
         });
@@ -194,8 +210,9 @@ function desenha_etapa(){
             erro=true;
             break;
         }
-        passou = false;
-    }
+        i+=1;
+    }while(passou && i<=iteradorDebug);
+
     automato[estadoAtual].cor = "#00FA9A";
 
     if(iteradorDebug >= palavra.length){
@@ -237,12 +254,13 @@ function desenha_circulo(contexto,i){
                 let label = "";
                 iguais.forEach(igual=>{
                     ignorar.push(igual.numero);
-                    label += igual.valor+","
+                    label += "("+igual.leitura+","+igual.escrita+","+igual.direcao+"),";
                 });
-                label+=transicao.valor;
+                label+="("+transicao.leitura+","+transicao.escrita+","+transicao.direcao+"),";
                 desenha_transicao(contexto,automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,label);
             }else{
-                desenha_transicao(contexto,automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,transicao.valor);
+                let label = transicao.leitura+","+transicao.escrita+","+transicao.direcao;
+                desenha_transicao(contexto,automato[i].x, automato[i].y,automato[transicao.destino].x, automato[transicao.destino].y,label);
             }
         }  
     });
@@ -402,20 +420,49 @@ canvas.addEventListener("contextmenu", function(event) {
             menu.appendChild(adiciona);
             adiciona.addEventListener("click", function() {
                 let lista_de_estados = [];
-                valor = document.createElement("input");
-                valor.placeholder = "valor";
-                valor.size = 3;
-                menu.appendChild(valor);
+                leitura = document.createElement("input");
+                leitura.id = "leitura";
+                leitura.placeholder = "leitura";
+                leitura.size = 3;
+                menu.appendChild(leitura);
+                escrita = document.createElement("input");
+                escrita.id = "escrita";
+                escrita.placeholder = "escrita";
+                escrita.size = 3;
+                menu.appendChild(escrita);
+
+                let direcao = document.createElement("select");
+                direcao.id = "direcao";
+                d = document.createElement("option");
+                d.innerText = "D";
+                d.value = "D";
+                e = document.createElement("option");
+                e.innerText = "E";
+                e.value = "E";
+                direcao.appendChild(d);
+                direcao.appendChild(e);
+                menu.appendChild(direcao);
+
+                let select = document.createElement("select");
+                select.id = "estado";
+                menu.appendChild(select);
                 for(j=0;j<automato.length;j++){
-                    lista_de_estados[j] = document.createElement("button");
+                    lista_de_estados[j] = document.createElement("option");
                     lista_de_estados[j].innerText = "S"+j;
-                    (function (indice) {
-                        lista_de_estados[j].addEventListener("click", function(){
-                            automato[adiciona.value].adiciona_transisao(indice,valor.value);
-                        });
-                    })(j);
-                    menu.appendChild(lista_de_estados[j]);
+                    lista_de_estados[j].value = j;
+                    select.appendChild(lista_de_estados[j]);
                 }
+
+                let confirma = document.createElement("button");
+                confirma.innerText = "Adicionar";
+                menu.appendChild(confirma);
+                confirma.addEventListener("click", function(){
+                    indice = document.getElementById("estado").value;
+                    leitura = document.getElementById("leitura").value;
+                    escrita = document.getElementById("escrita").value;
+                    direcao = document.getElementById("direcao").value;
+                    automato[adiciona.value].adiciona_transisao(indice,leitura,escrita,direcao);
+                });
             });
 
             const remove = document.createElement("button");
