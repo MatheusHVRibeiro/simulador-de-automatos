@@ -625,3 +625,22 @@ document.getElementById("uploadInput").addEventListener("change", function (even
     // Inicia a leitura do arquivo como texto
     reader.readAsText(file);
 });
+
+
+
+
+window.addEventListener('resize', resizeCanvas());
+window.addEventListener('DOMContentLoaded', resizeCanvas());
+
+function resizeCanvas(){
+    let width = window.innerWidth*0.6;
+    let height = window.innerHeight*0.6;
+    
+    canvas.width = width;
+    canvas.height = height;
+    desenha(ctx);
+
+    debugCanvas.width = width;
+    debugCanvas.height = height;
+    desenha(debugCtx);
+}
