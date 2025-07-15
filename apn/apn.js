@@ -7,6 +7,13 @@ let iteradorDebug;
 let pilha = [];
 let automato = [];
 
+class Instancia{
+    constructor(){
+        this.estadoAtual = 0;
+        this.pilha = [];
+        this.cor = "#00FA9A";
+    }
+}
 
 class Transicao {
     constructor(origem, destino, valor, numero, empilha, desempilha) {
@@ -33,15 +40,9 @@ class Estado {
     }
     adiciona_transisao(i, valor, empilha, desempilha) {
         let valida = true;
-        this.transicoes.forEach(transicao => {
-            if (transicao.valor == valor && transicao.desempilha == desempilha) {
-                valida = false;
-                alert("transisao invalida para APD");
-            }
-        });
         if (valor == "") {
             valida = false;
-            alert("transisao invalida para APD");
+            alert("transisao invalida para APN");
         }
         if (valida) {
             this.transicoes.push(new Transicao(this.numero, i, valor, this.transicoes.length, empilha, desempilha));
@@ -72,32 +73,45 @@ function adiciona_estado(x, y) {
 
 function testa_palavra() {
     palavra = document.getElementById("palavra");
-    let estadoAtual = 0;
-    let passou = false;
+    let instancias = [];
     let erro = false;
     pilha = [];
+
+    instancias[0] = new Instancia();
+     
     for (i = 0; i < palavra.value.length; i++) {
-        automato[estadoAtual].transicoes.forEach(transicao => {
-            if (palavra.value[i] == transicao.valor) {
-                if (transicao.desempilha == pilha[pilha.length - 1]) {
-                    estadoAtual = transicao.destino;
-                    pilha.pop();
-                    pilha.push(transicao.empilha);
-                    passou = true;
-                } else if (transicao.desempilha = "") {
-                    estadoAtual = transicao.destino;
-                    pilha.push(transicao.empilha);
-                    passou = true;
+        let proximosEstados = [];
+        let temp;
+
+        instancias.forEach(instancia=>{
+            automato[instancia.estadoAtual].transicoes.forEach(transicao => {
+                if (palavra.value[i] == transicao.valor) {
+                    if (transicao.desempilha == instancia.pilha[pilha.length - 1]) {
+                        temp = new Instancia();
+                        temp.estadoAtual = transicao.destino;
+                        temp.pilha = instancia.pilha;
+                        temp.pilha.pop();
+                        temp.pilha.push(transicao.empilha);
+                        proximosEstados.push(temp);
+                    } else if (transicao.desempilha = "") {
+                        temp = new Instancia();
+                        temp.estadoAtual = transicao.destino;
+                        temp.pilha = instancia.pilha;
+                        temp.pilha.push(transicao.empilha);
+                        proximosEstados.push(temp);
+                    }
                 }
-            }
+            });
         });
-        if (!passou) {
+        if (proximosEstados.length === 0) {
             erro = true;
             break;
         }
         passou = false;
+        instancias = proximosEstados;
     }
-    if (automato[estadoAtual].final && !erro) {
+    const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final);
+    if (aceita && !erro) {
         alert("palavra aceita");
     } else {
         alert("palavra recusada");
@@ -234,26 +248,19 @@ function desenha_etapa() {
     desenha_botoes(debugCtx);
     automato[estadoAtual].cor = "#00BFFF";
 
-    debugCtx.fillStyle = 'black';
-
-    debugCtx.beginPath();
-    debugCtx.moveTo(debugCanvas.width - 30,debugCanvas.height - 200);
-    debugCtx.lineTo(debugCanvas.width - 30,debugCanvas.height - 40);
-    debugCtx.lineTo(debugCanvas.width -1,debugCanvas.height - 40);
-    debugCtx.lineTo(debugCanvas.width -1,debugCanvas.height - 200);
-    debugCtx.stroke();
-
     let altura = 0;
-    
-    
+    debugCtx.beginPath();
+    debugCtx.fillStyle = 'black';
     debugCtx.font = '25px Arial';
     debugCtx.textAlign = 'center';
     debugCtx.textBaseline = 'middle';
 
     pilha.forEach(elemento => {
-        debugCtx.fillText(elemento, debugCanvas.width - 15, debugCanvas.height - 50 - altura);
+        debugCtx.fillText(elemento, debugCanvas.width - 10, debugCanvas.height - 50 - altura);
         altura += debugCtx.measureText("0").width * 2;
     });
+
+    debugCtx.closePath();
 
 }
 

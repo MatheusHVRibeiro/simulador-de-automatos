@@ -19,6 +19,20 @@ function afnl_out(){
     document.getElementById("afnl").innerText = "AFNλ";
 }
 
+function apd_on(){
+    document.getElementById("apd").innerText = "Automato de Pilha Deterministico";
+}
+function apd_out(){
+    document.getElementById("apd").innerText = "APD";
+}
+
+function apn_on(){
+    document.getElementById("apn").innerText = "Automato de Pilha Não Deterministico";
+}
+function apn_out(){
+    document.getElementById("apn").innerText = "APN";
+}
+
 function mt_on(){
     document.getElementById("mt").innerHTML = "Máquinas De Turing";
 }
