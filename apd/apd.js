@@ -488,8 +488,8 @@ canvas.addEventListener("contextmenu", function (event) {
                 desempilha.placeholder = "desempilha";
                 valor.size = 3;
                 menu.appendChild(valor);
-                menu.appendChild(empilha);
                 menu.appendChild(desempilha);
+                menu.appendChild(empilha);
                 for (j = 0; j < automato.length; j++) {
                     lista_de_estados[j] = document.createElement("button");
                     lista_de_estados[j].innerText = "S" + j;

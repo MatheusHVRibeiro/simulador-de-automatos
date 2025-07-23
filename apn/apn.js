@@ -7,11 +7,17 @@ let iteradorDebug;
 let pilha = [];
 let automato = [];
 
-class Instancia{
-    constructor(){
-        this.estadoAtual = 0;
-        this.pilha = [];
-        this.cor = "#00FA9A";
+class Instancia {
+    constructor(instancia) {
+        if (instancia != null) {
+            this.estadoAtual = instancia.estadoAtual;
+            this.pilha = instancia.pilha;
+            this.cor = instancia.cor;
+        } else {
+            this.estadoAtual = 0;
+            this.pilha = [];
+            this.cor = "#00FA9A";
+        }
     }
 }
 
@@ -39,15 +45,8 @@ class Estado {
         this.final = false;
     }
     adiciona_transisao(i, valor, empilha, desempilha) {
-        let valida = true;
-        if (valor == "") {
-            valida = false;
-            alert("transisao invalida para APN");
-        }
-        if (valida) {
-            this.transicoes.push(new Transicao(this.numero, i, valor, this.transicoes.length, empilha, desempilha));
-        }
 
+        this.transicoes.push(new Transicao(this.numero, i, valor, this.transicoes.length, empilha, desempilha));
         desenha(ctx);
     }
     remove_transicao(i) {
@@ -78,26 +77,30 @@ function testa_palavra() {
     pilha = [];
 
     instancias[0] = new Instancia();
-     
+
     for (i = 0; i < palavra.value.length; i++) {
         let proximosEstados = [];
         let temp;
 
-        instancias.forEach(instancia=>{
+        instancias.forEach(instancia => {
             automato[instancia.estadoAtual].transicoes.forEach(transicao => {
-                if (palavra.value[i] == transicao.valor) {
-                    if (transicao.desempilha == instancia.pilha[pilha.length - 1]) {
+                if (palavra.value[i] == transicao.valor || transicao.valor == "") {
+                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1]) {
                         temp = new Instancia();
                         temp.estadoAtual = transicao.destino;
                         temp.pilha = instancia.pilha;
                         temp.pilha.pop();
-                        temp.pilha.push(transicao.empilha);
+                        for (const char of transicao.empilha) {
+                            temp.pilha.push(char);
+                        }
                         proximosEstados.push(temp);
-                    } else if (transicao.desempilha = "") {
+                    } else if (transicao.desempilha == "") {
                         temp = new Instancia();
                         temp.estadoAtual = transicao.destino;
                         temp.pilha = instancia.pilha;
-                        temp.pilha.push(transicao.empilha);
+                        for (const char of transicao.empilha) {
+                            temp.pilha.push(char);
+                        }
                         proximosEstados.push(temp);
                     }
                 }
@@ -108,9 +111,13 @@ function testa_palavra() {
             break;
         }
         passou = false;
-        instancias = proximosEstados;
+        let iterador = 0;
+        proximosEstados.forEach(proximo => {
+            instancias[iterador] = new Instancia(proximo);
+            iterador++;
+        });
     }
-    const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final);
+    const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0);
     if (aceita && !erro) {
         alert("palavra aceita");
     } else {
@@ -206,37 +213,65 @@ function desenha_palavra() {
 
 function desenha_etapa() {
     palavra = document.getElementById("palavra");
-    let estadoAtual = 0;
-    let passou = false;
+    let instancias = [];
     let erro = false;
     pilha = [];
 
+    instancias[0] = new Instancia();
+
     for (i = 0; i < iteradorDebug; i++) {
-        automato[estadoAtual].transicoes.forEach(transicao => {
-            if (palavra.value[i] == transicao.valor) {
-                if (transicao.desempilha == pilha[pilha.length - 1]) {
-                    estadoAtual = transicao.destino;
-                    pilha.pop();
-                    pilha.push(transicao.empilha);
-                    passou = true;
-                } else if (transicao.desempilha == "") {
-                    estadoAtual = transicao.destino;
-                    pilha.push(transicao.empilha);
-                    passou = true;
+        let proximosEstados = [];
+        let temp;
+
+        instancias.forEach(instancia => {
+            automato[instancia.estadoAtual].transicoes.forEach(transicao => {
+                if (palavra.value[i] == transicao.valor || transicao.valor == "") {
+                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1]) {
+                        temp = new Instancia();
+                        temp.estadoAtual = transicao.destino;
+                        temp.pilha = [...instancia.pilha];
+                        temp.pilha.pop();
+                        for (const char of transicao.empilha) {
+                            temp.pilha.push(char);
+                        }
+                        proximosEstados.push(temp);
+                        console.log("aqui 1");
+                    } else if (transicao.desempilha == "") {
+                        temp = new Instancia();
+                        temp.estadoAtual = transicao.destino;
+                        temp.pilha = [...instancia.pilha];
+                        for (const char of transicao.empilha) {
+                            temp.pilha.push(char);
+                        }
+                        proximosEstados.push(temp);
+                        console.log("aqui 2");
+                    }
                 }
-            }
+            });
         });
-        if (!passou) {
+        
+        console.log(proximosEstados);
+        if (proximosEstados.length === 0) {
             erro = true;
             break;
         }
         passou = false;
-    }
-    automato[estadoAtual].cor = "#00FA9A";
 
+        let iterador = 0;
+        proximosEstados.forEach(proximo => {
+            instancias[iterador] = new Instancia(proximo);
+            iterador++;
+        });
+
+    }
+
+    instancias.forEach(instancia => {
+        automato[instancia.estadoAtual].cor = "#00FA9A";
+    });
 
     if (iteradorDebug >= palavra.length) {
-        if (automato[estadoAtual].final && !erro) {
+        const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0);
+        if (aceita && !erro) {
             alert("palavra aceita");
         } else {
             alert("palavra recusada");
@@ -246,22 +281,36 @@ function desenha_etapa() {
     desenha(debugCtx);
     desenha_palavra();
     desenha_botoes(debugCtx);
-    automato[estadoAtual].cor = "#00BFFF";
+    desenha_pilha(instancias);
+
+    instancias.forEach(instancia => {
+        automato[instancia.estadoAtual].cor = "#00BFFF";
+    });
+
+}
+
+function desenha_pilha(instancias) {
+    debugCtx.fillStyle = '#00FA9A';
+
+    debugCtx.beginPath();
+    debugCtx.moveTo(debugCanvas.width - 30, debugCanvas.height - 200);
+    debugCtx.lineTo(debugCanvas.width - 30, debugCanvas.height - 40);
+    debugCtx.lineTo(debugCanvas.width - 1, debugCanvas.height - 40);
+    debugCtx.lineTo(debugCanvas.width - 1, debugCanvas.height - 200);
+    debugCtx.stroke();
 
     let altura = 0;
-    debugCtx.beginPath();
-    debugCtx.fillStyle = 'black';
+
+
     debugCtx.font = '25px Arial';
     debugCtx.textAlign = 'center';
     debugCtx.textBaseline = 'middle';
 
-    pilha.forEach(elemento => {
-        debugCtx.fillText(elemento, debugCanvas.width - 10, debugCanvas.height - 50 - altura);
+    instancias[0].pilha.forEach(elemento => {
+        debugCtx.fillText(elemento, debugCanvas.width - 15, debugCanvas.height - 50 - altura);
         altura += debugCtx.measureText("0").width * 2;
     });
-
-    debugCtx.closePath();
-
+    debugCtx.fillStyle = 'black';
 }
 
 function getMousePos(canvas, event) {
@@ -286,11 +335,17 @@ function desenha_circulo(contexto, i) {
         if (!ignorar.includes(transicao.numero)) {
             iguais = automato[i].transicoes.filter(objeto => objeto.destino == transicao.destino && objeto.numero !== transicao.numero);
             let label = "";
+            let valor = "";
             let empilha = "";
             let desempilha = "";
             if (iguais.length > 0) {
                 iguais.forEach(igual => {
                     ignorar.push(igual.numero);
+                    if (igual.valor == "") {
+                        valor = "λ";
+                    } else {
+                        valor = igual.valor;
+                    }
                     if (igual.desempilha == "") {
                         desempilha = "λ";
                     } else {
@@ -301,8 +356,13 @@ function desenha_circulo(contexto, i) {
                     } else {
                         empilha = igual.empilha;
                     }
-                    label += "(" + igual.valor + "," + desempilha + "/" + empilha + "),";
+                    label += "(" + valor + "," + desempilha + "/" + empilha + "),";
                 });
+                if (transicao.valor == "") {
+                    valor = "λ";
+                } else {
+                    valor = transicao.valor;
+                }
                 if (transicao.desempilha == "") {
                     desempilha = "λ";
                 } else {
@@ -313,9 +373,14 @@ function desenha_circulo(contexto, i) {
                 } else {
                     empilha = transicao.empilha;
                 }
-                label += "(" + transicao.valor + "," + desempilha + "/" + empilha + ")";
+                label += "(" + valor + "," + desempilha + "/" + empilha + ")";
                 desenha_transicao(contexto, automato[i].x, automato[i].y, automato[transicao.destino].x, automato[transicao.destino].y, label);
             } else {
+                if (transicao.valor == "") {
+                    valor = "λ";
+                } else {
+                    valor = transicao.valor;
+                }
                 if (transicao.desempilha == "") {
                     desempilha = "λ";
                 } else {
@@ -326,7 +391,7 @@ function desenha_circulo(contexto, i) {
                 } else {
                     empilha = transicao.empilha;
                 }
-                label = transicao.valor + "," + desempilha + "/" + empilha;
+                label = valor + "," + desempilha + "/" + empilha;
                 desenha_transicao(contexto, automato[i].x, automato[i].y, automato[transicao.destino].x, automato[transicao.destino].y, label);
             }
         }
@@ -495,8 +560,8 @@ canvas.addEventListener("contextmenu", function (event) {
                 desempilha.placeholder = "desempilha";
                 valor.size = 3;
                 menu.appendChild(valor);
-                menu.appendChild(empilha);
                 menu.appendChild(desempilha);
+                menu.appendChild(empilha);
                 for (j = 0; j < automato.length; j++) {
                     lista_de_estados[j] = document.createElement("button");
                     lista_de_estados[j].innerText = "S" + j;
@@ -565,7 +630,7 @@ function exportar() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "APD.json"; // Nome do arquivo a ser baixado
+    link.download = "APN.json"; // Nome do arquivo a ser baixado
 
     // Adiciona o link à página e simula o clique
     document.body.appendChild(link);
@@ -629,13 +694,13 @@ document.getElementById("uploadInput").addEventListener("change", function (even
 
 
 
-window.addEventListener('resize', resizeCanvas());
-window.addEventListener('DOMContentLoaded', resizeCanvas());
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('DOMContentLoaded', resizeCanvas);
 
-function resizeCanvas(){
-    let width = window.innerWidth*0.6;
-    let height = window.innerHeight*0.6;
-    
+function resizeCanvas() {
+    let width = window.innerWidth * 0.6;
+    let height = window.innerHeight * 0.6;
+
     canvas.width = width;
     canvas.height = height;
     desenha(ctx);
