@@ -90,7 +90,7 @@ function executa_automato(passo) {
                         if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1] || transicao.desempilha == "") {
                             temp = new Instancia();
                             temp.estadoAtual = transicao.destino;
-                            temp.pilha = instancia.pilha;
+                            temp.pilha = [...instancia.pilha];
                             if (transicao.desempilha != "") {
                                 temp.pilha.pop();
                             }
