@@ -13,10 +13,12 @@ class Instancia {
             this.estadoAtual = instancia.estadoAtual;
             this.pilha = instancia.pilha;
             this.cor = instancia.cor;
+            this.erro = instancia.erro;
         } else {
             this.estadoAtual = 0;
             this.pilha = [];
             this.cor = "#00FA9A";
+            this.erro = false;
         }
     }
 }
@@ -70,59 +72,78 @@ function adiciona_estado(x, y) {
     desenha(ctx);
 }
 
-function testa_palavra() {
+function executa_automato(passo) {
     palavra = document.getElementById("palavra");
     let instancias = [];
-    let erro = false;
-    pilha = [];
+    let passou = false;
 
     instancias[0] = new Instancia();
 
-    for (i = 0; i < palavra.value.length; i++) {
+    for (i = 0; i < passo; i++) {
         let proximosEstados = [];
         let temp;
 
         instancias.forEach(instancia => {
-            automato[instancia.estadoAtual].transicoes.forEach(transicao => {
-                if (palavra.value[i] == transicao.valor || transicao.valor == "") {
-                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1]) {
-                        temp = new Instancia();
-                        temp.estadoAtual = transicao.destino;
-                        temp.pilha = instancia.pilha;
-                        temp.pilha.pop();
-                        for (const char of transicao.empilha) {
-                            temp.pilha.push(char);
+            if (!instancia.erro) {
+                automato[instancia.estadoAtual].transicoes.forEach(transicao => {
+                    if (palavra.value[i] == transicao.valor || transicao.valor == "") {
+                        if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1] || transicao.desempilha == "") {
+                            temp = new Instancia();
+                            temp.estadoAtual = transicao.destino;
+                            temp.pilha = instancia.pilha;
+                            if (transicao.desempilha != "") {
+                                temp.pilha.pop();
+                            }
+                            for (const char of transicao.empilha) {
+                                temp.pilha.push(char);
+                            }
+                            proximosEstados.push(temp);
+                            passou = true;
                         }
-                        proximosEstados.push(temp);
-                    } else if (transicao.desempilha == "") {
-                        temp = new Instancia();
-                        temp.estadoAtual = transicao.destino;
-                        temp.pilha = instancia.pilha;
-                        for (const char of transicao.empilha) {
-                            temp.pilha.push(char);
-                        }
-                        proximosEstados.push(temp);
                     }
+
+                });
+                if (!passou) {
+                    instancia.erro = true;
                 }
-            });
+                passou = false;
+            }
+
         });
-        if (proximosEstados.length === 0) {
-            erro = true;
-            break;
-        }
-        passou = false;
-        let iterador = 0;
+
+        instancias = [];
         proximosEstados.forEach(proximo => {
-            instancias[iterador] = new Instancia(proximo);
-            iterador++;
+            instancias.push(new Instancia(proximo));
         });
+        console.log(instancias);
     }
-    const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0);
-    if (aceita && !erro) {
-        alert("palavra aceita");
-    } else {
-        alert("palavra recusada");
+    if (passo == palavra.value.length) {
+        const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0 && !instancia.erro);
+        if (aceita) {
+            alert("palavra aceita");
+        } else {
+            alert("palavra recusada");
+        }
     }
+    return instancias;
+}
+
+function testa_palavra() {
+    executa_automato(document.getElementById("palavra").value.length);
+}
+
+function desenha_etapa() {
+    let instancias = executa_automato(iteradorDebug);
+
+    desenha(debugCtx);
+    desenha_palavra();
+    desenha_botoes(debugCtx);
+    desenha_pilha(instancias);
+
+    instancias.forEach(instancia => {
+        automato[instancia.estadoAtual].cor = "#00BFFF";
+    });
+
 }
 
 function debuga_palavra() {
@@ -209,84 +230,6 @@ function desenha_palavra() {
 
     debugCtx.fillStyle = "red";
     debugCtx.fillText(palavra[iteradorDebug], debugCanvas.width - 10 - posisaoCaracter, debugCanvas.height - 20);
-}
-
-function desenha_etapa() {
-    palavra = document.getElementById("palavra");
-    let instancias = [];
-    let erro = false;
-    pilha = [];
-
-    instancias[0] = new Instancia();
-
-    for (i = 0; i < iteradorDebug; i++) {
-        let proximosEstados = [];
-        let temp;
-
-        instancias.forEach(instancia => {
-            automato[instancia.estadoAtual].transicoes.forEach(transicao => {
-                if (palavra.value[i] == transicao.valor || transicao.valor == "") {
-                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1]) {
-                        temp = new Instancia();
-                        temp.estadoAtual = transicao.destino;
-                        temp.pilha = [...instancia.pilha];
-                        temp.pilha.pop();
-                        for (const char of transicao.empilha) {
-                            temp.pilha.push(char);
-                        }
-                        proximosEstados.push(temp);
-                        console.log("aqui 1");
-                    } else if (transicao.desempilha == "") {
-                        temp = new Instancia();
-                        temp.estadoAtual = transicao.destino;
-                        temp.pilha = [...instancia.pilha];
-                        for (const char of transicao.empilha) {
-                            temp.pilha.push(char);
-                        }
-                        proximosEstados.push(temp);
-                        console.log("aqui 2");
-                    }
-                }
-            });
-        });
-        
-        console.log(proximosEstados);
-        if (proximosEstados.length === 0) {
-            erro = true;
-            break;
-        }
-        passou = false;
-
-        let iterador = 0;
-        proximosEstados.forEach(proximo => {
-            instancias[iterador] = new Instancia(proximo);
-            iterador++;
-        });
-
-    }
-
-    instancias.forEach(instancia => {
-        automato[instancia.estadoAtual].cor = "#00FA9A";
-    });
-
-    if (iteradorDebug >= palavra.length) {
-        const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0);
-        if (aceita && !erro) {
-            alert("palavra aceita");
-        } else {
-            alert("palavra recusada");
-        }
-    }
-
-    desenha(debugCtx);
-    desenha_palavra();
-    desenha_botoes(debugCtx);
-    desenha_pilha(instancias);
-
-    instancias.forEach(instancia => {
-        automato[instancia.estadoAtual].cor = "#00BFFF";
-    });
-
 }
 
 function desenha_pilha(instancias) {
@@ -657,12 +600,12 @@ document.getElementById("uploadInput").addEventListener("change", function (even
                 this.transicoes.forEach(transicao => {
                     if (transicao.valor == valor) {
                         valida = false;
-                        alert("transisao invalida para APD");
+                        alert("transisao invalida para APN");
                     }
                 });
                 if (valor == "") {
                     valida = false;
-                    alert("transisao invalida para APD");
+                    alert("transisao invalida para APN");
                 }
                 if (valida) {
                     this.transicoes.push(new Transicao(this.numero, i, valor, this.transicoes.length, empilha, desempilha));
@@ -690,8 +633,6 @@ document.getElementById("uploadInput").addEventListener("change", function (even
     // Inicia a leitura do arquivo como texto
     reader.readAsText(file);
 });
-
-
 
 
 window.addEventListener('resize', resizeCanvas);
