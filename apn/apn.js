@@ -143,14 +143,14 @@ function executa_automato(passo) {
 }
 
 function executa_lanbda(transicao, char, pilha) {
-    if (transicao.desempilha == pilha[pilha.length - 1] || transicao.desempilha == "") {
-        if (transicao.desempilha != "") {
-            pilha.pop();
-        }
-        for (const empilhado of transicao.empilha) {
-            pilha.push(empilhado);
-        }
+
+    if (transicao.desempilha != "") {
+        pilha.pop();
     }
+    for (const empilhado of transicao.empilha) {
+        pilha.push(empilhado);
+    }
+    
     let proximosEstados = [];
     let temp;
     let temp_lanb = [];
@@ -159,7 +159,7 @@ function executa_lanbda(transicao, char, pilha) {
 
             if (transicao2.valor == "") {
 
-                temp_lanb = executa_lanbda(transicao, palavra.value[i], [...instancia.pilha]);
+                temp_lanb = executa_lanbda(transicao, palavra.value[i], [...pilha]);
                 if (temp_lanb.length != 0) {
                     temp_lanb.forEach(proximo => {
                         proximosEstados.push(proximo);
