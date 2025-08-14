@@ -1,9 +1,11 @@
+
 const canvas = document.getElementById("meuCanvas");
 const ctx = canvas.getContext("2d");
 const debugCanvas = document.getElementById("debugCanvas");
 const debugCtx = debugCanvas.getContext("2d");
 
 let iteradorDebug;
+let evidencia;
 let pilha = [];
 let automato = [];
 
@@ -72,6 +74,7 @@ function adiciona_estado(x, y) {
     desenha(ctx);
 }
 
+//aqui fica a logica de execução do automato
 function executa_automato(passo) {
     palavra = document.getElementById("palavra");
     let instancias = [];
@@ -82,12 +85,13 @@ function executa_automato(passo) {
     for (i = 0; i < passo; i++) {
         let proximosEstados = [];
         let temp;
+        let temp_lanb = [];
 
         instancias.forEach(instancia => {
             if (!instancia.erro) {
                 automato[instancia.estadoAtual].transicoes.forEach(transicao => {
-                    if (palavra.value[i] == transicao.valor || transicao.valor == "") {
-                        if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1] || transicao.desempilha == "") {
+                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1] || transicao.desempilha == "") {
+                        if (palavra.value[i] == transicao.valor) {
                             temp = new Instancia();
                             temp.estadoAtual = transicao.destino;
                             temp.pilha = [...instancia.pilha];
@@ -99,9 +103,19 @@ function executa_automato(passo) {
                             }
                             proximosEstados.push(temp);
                             passou = true;
+
+                        } else if (transicao.valor == "") {
+                            temp_lanb = executa_lanbda(transicao, palavra.value[i], [...instancia.pilha]);
+                            if (temp_lanb.length != 0) {
+                                temp_lanb.forEach(proximo => {
+                                    proximosEstados.push(proximo);
+                                });
+                                passou = true;
+                                temp_lanb = [];
+                            }
+
                         }
                     }
-
                 });
                 if (!passou) {
                     instancia.erro = true;
@@ -128,21 +142,69 @@ function executa_automato(passo) {
     return instancias;
 }
 
+function executa_lanbda(transicao, char, pilha) {
+    if (transicao.desempilha == pilha[pilha.length - 1] || transicao.desempilha == "") {
+        if (transicao.desempilha != "") {
+            pilha.pop();
+        }
+        for (const empilhado of transicao.empilha) {
+            pilha.push(empilhado);
+        }
+    }
+    let proximosEstados = [];
+    let temp;
+    let temp_lanb = [];
+    automato[transicao.destino].transicoes.forEach(transicao2 => {
+        if (transicao2.desempilha == pilha[pilha.length - 1] || transicao2.desempilha == "") {
+
+            if (transicao2.valor == "") {
+
+                temp_lanb = executa_lanbda(transicao, palavra.value[i], [...instancia.pilha]);
+                if (temp_lanb.length != 0) {
+                    temp_lanb.forEach(proximo => {
+                        proximosEstados.push(proximo);
+                    });
+                    passou = true;
+                    temp_lanb = [];
+                }
+
+            } else if (char == transicao2.valor) {
+
+
+                temp = new Instancia();
+                temp.estadoAtual = transicao2.destino;
+                temp.pilha = [...pilha];
+                if (transicao2.desempilha != "") {
+                    temp.pilha.pop();
+                }
+                for (const char of transicao2.empilha) {
+                    temp.pilha.push(char);
+                }
+                proximosEstados.push(temp);
+                passou = true;
+
+            }
+        }
+
+    });
+    return proximosEstados;
+}
+
 function testa_palavra() {
     executa_automato(document.getElementById("palavra").value.length);
 }
 
 function desenha_etapa() {
     let instancias = executa_automato(iteradorDebug);
-
     desenha(debugCtx);
     desenha_palavra();
     desenha_botoes(debugCtx);
     desenha_pilha(instancias);
 
-    instancias.forEach(instancia => {
-        automato[instancia.estadoAtual].cor = "#00BFFF";
+    automato.forEach(estado => {
+        estado.cor = "#00BFFF";
     });
+    automato[instancias[evidencia].estadoAtual].cor = instancias[evidencia].cor;
 
 }
 
@@ -154,6 +216,10 @@ function debuga_palavra() {
         canvas.style.display = "none";
         debugCanvas.style.display = "block";
         iteradorDebug = 0;
+
+        evidencia = 0;
+
+
         desenha_etapa();
     } else {
         palavra.readOnly = false;
@@ -219,28 +285,34 @@ debugCanvas.addEventListener("mousedown", function (e) {
 
 function desenha_palavra() {
     palavra = document.getElementById("palavra").value;
-
+    let x = 20;
+    let y = canvas.height - 20 - 50 - 20;
     debugCtx.font = "25px Arial";
     debugCtx.fillStyle = "black";
-    debugCtx.textAlign = 'end';
-    debugCtx.fillText(palavra, debugCanvas.width - 10, debugCanvas.height - 20);
+    debugCtx.textAlign = 'start';
+    debugCtx.fillText(palavra, x, y);
 
-    let posisaoCaracter = debugCtx.measureText(palavra).width - debugCtx.measureText(palavra.slice(0, iteradorDebug + 1)).width;
-    debugCtx.strokeRect(debugCanvas.width - 10 - posisaoCaracter - debugCtx.measureText("o").width, debugCanvas.height - 35, debugCtx.measureText("o").width, debugCtx.measureText("o").width * 2);
+    let posisaoCaracter = debugCtx.measureText(palavra.slice(0, iteradorDebug)).width;
+    debugCtx.strokeRect(x + posisaoCaracter, y - 15, debugCtx.measureText("o").width, debugCtx.measureText("o").width * 2);
 
     debugCtx.fillStyle = "red";
-    debugCtx.fillText(palavra[iteradorDebug], debugCanvas.width - 10 - posisaoCaracter, debugCanvas.height - 20);
+    debugCtx.fillText(palavra[iteradorDebug], x + posisaoCaracter, y);
 }
 
 function desenha_pilha(instancias) {
-    debugCtx.fillStyle = '#00FA9A';
+    let y = canvas.height - 20 - 50 - 20;
+
+    debugCtx.fillStyle = instancias[evidencia].cor;
+    debugCtx.strokeStyle = instancias[evidencia].cor;
 
     debugCtx.beginPath();
-    debugCtx.moveTo(debugCanvas.width - 30, debugCanvas.height - 200);
-    debugCtx.lineTo(debugCanvas.width - 30, debugCanvas.height - 40);
-    debugCtx.lineTo(debugCanvas.width - 1, debugCanvas.height - 40);
-    debugCtx.lineTo(debugCanvas.width - 1, debugCanvas.height - 200);
+    debugCtx.moveTo(debugCanvas.width - 30, y - 200);
+    debugCtx.lineTo(debugCanvas.width - 30, y + 10);
+    debugCtx.lineTo(debugCanvas.width - 1, y + 10);
+    debugCtx.lineTo(debugCanvas.width - 1, y - 200);
     debugCtx.stroke();
+
+    debugCtx.strokeStyle = '#000000';
 
     let altura = 0;
 
@@ -249,8 +321,8 @@ function desenha_pilha(instancias) {
     debugCtx.textAlign = 'center';
     debugCtx.textBaseline = 'middle';
 
-    instancias[0].pilha.forEach(elemento => {
-        debugCtx.fillText(elemento, debugCanvas.width - 15, debugCanvas.height - 50 - altura);
+    instancias[evidencia].pilha.forEach(elemento => {
+        debugCtx.fillText(elemento, debugCanvas.width - 15, y - altura);
         altura += debugCtx.measureText("0").width * 2;
     });
     debugCtx.fillStyle = 'black';
@@ -418,7 +490,7 @@ function desenha_transicao(contexto, x1, y1, x2, y2, valor) {
 
 }
 
-// Adiciona evento de clique no mouse
+
 canvas.addEventListener("mousedown", function (e) {
     const mousePos = getMousePos(canvas, e);
     for (i = 0; i < automato.length; i++) {
@@ -432,14 +504,14 @@ canvas.addEventListener("mousedown", function (e) {
     }
 });
 
-// Adiciona evento de soltar o botão do mouse
+
 canvas.addEventListener("mouseup", function () {
     for (i = 0; i < automato.length; i++) {
         automato[i].isDragging = false;
     }
 });
 
-// Adiciona evento de movimento do mouse
+
 canvas.addEventListener("mousemove", function (e) {
     for (i = 0; i < automato.length; i++) {
         if (automato[i].isDragging) {
