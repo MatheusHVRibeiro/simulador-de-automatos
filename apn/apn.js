@@ -82,7 +82,7 @@ function executa_automato(passo) {
 
     instancias[0] = new Instancia();
 
-    for (i = 0; i < passo; i++) {
+    for (i = 0; i <= passo; i++) {
         let proximosEstados = [];
         let temp;
         let temp_lanb = [];
@@ -129,8 +129,10 @@ function executa_automato(passo) {
         proximosEstados.forEach(proximo => {
             instancias.push(new Instancia(proximo));
         });
+
         console.log(instancias);
     }
+
     if (passo == palavra.value.length) {
         const aceita = instancias.some(instancia => automato[instancia.estadoAtual].final && instancia.pilha.length === 0 && !instancia.erro);
         if (aceita) {
@@ -150,7 +152,7 @@ function executa_lanbda(transicao, char, pilha) {
     for (const empilhado of transicao.empilha) {
         pilha.push(empilhado);
     }
-    
+
     let proximosEstados = [];
     let temp;
     let temp_lanb = [];
@@ -196,6 +198,8 @@ function testa_palavra() {
 
 function desenha_etapa() {
     let instancias = executa_automato(iteradorDebug);
+
+    botao_evidencia(instancias);
     desenha(debugCtx);
     desenha_palavra();
     desenha_botoes(debugCtx);
@@ -208,8 +212,35 @@ function desenha_etapa() {
 
 }
 
+function botao_evidencia(instancias){
+
+    let form = document.getElementById("evidencia");
+    if (instancias.length > form.children.length) {
+        let total = form.children.length;
+        let botao;
+        let div;
+        for(let i=total;i<instancias.length;++i){
+            div = document.createElement("span");
+            botao = document.createElement("input");
+            botao.type = "radio";
+            botao.innerHTML = i;
+            botao.value = i;
+            botao.name = "evidencia";
+            botao.onclick = ()=>{
+                evidencia = i;
+                desenha_etapa();
+            };
+            div.appendChild(botao);
+            div.appendChild(document.createTextNode(i+" "));
+            form.appendChild(div);
+        }
+        
+    }
+}
+
 function debuga_palavra() {
     palavra = document.getElementById("palavra");
+    let form = document.getElementById("evidencia");
     if (canvas.style.display == "block" && debugCanvas.style.display == "none") {
         palavra.readOnly = true;
 
@@ -226,6 +257,7 @@ function debuga_palavra() {
 
         canvas.style.display = "block";
         debugCanvas.style.display = "none";
+        form.innerHTML = "";
 
         desenha(ctx);
     }
@@ -277,7 +309,7 @@ debugCanvas.addEventListener("mousedown", function (e) {
         }
     } else if (mousePos.x >= left + 110 && mousePos.x <= right + 110 && mousePos.y >= topp && mousePos.y <= botton) {
         if (iteradorDebug < tamanho) {
-            iteradorDebug += 1;
+            iteradorDebug ++;
             desenha_etapa();
         }
     }
