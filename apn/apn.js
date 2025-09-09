@@ -74,149 +74,123 @@ function adiciona_estado(x, y) {
     desenha(ctx);
 }
 
-//aqui fica a logica de execução do automato
-//formatar para funcionar com configuração instantanea
-function executa_automato(passo) {
-    palavra = document.getElementById("palavra");
-    let instancias = [];
-    let passou = false;
-
-    instancias[0] = new Instancia();
-
-    automato[instancias[0].estadoAtual].transicoes.forEach(transicao => {
-        if (transicao.valor == "") {
-            temp_lanb = executa_lanbda(transicao, [...instancias[0].pilha]);
-            if (temp_lanb.length != 0) {
-                temp_lanb.forEach(proximo => {
-                    instancias.push(new Instancia(proximo));
-                });
-                temp_lanb = [];
+function transisoes_validas(pos, instancia) {
+    palavra = document.getElementById("palavra").value;
+    let validos = [];
+    let aux;
+    let cont = 0;
+    automato[instancia.estadoAtual].transicoes.forEach(transicao => {
+        console.log(palavra[pos]);
+        if (transicao.valor == palavra[pos]) {
+            if (cont > 0) {
+                aux = new Instancia();
+                aux.estadoAtual = transicao.destino;
+                aux.pilha = [...instancia.pilha];
+                if (pop_instancia(aux, transicao.desempilha)) {
+                    push_instancia(aux, transicao.empilha);
+                    validos.push(aux);
+                    cont++;
+                }
+            } else {
+                if (pop_instancia(instancia, transicao.desempilha)) {
+                    instancia.estadoAtual = transicao.destino;
+                    push_instancia(instancia, transicao.empilha);
+                    validos.push(instancia);
+                    cont++;
+                }
             }
         }
-
     });
+    return fecho(validos);
 
-    for (i = 0; i <= passo; i++) {
-        let proximosEstados = [];
-        let temp;
-        let temp_lanb = [];
+}
 
-        instancias.forEach(instancia => {
-            if (!instancia.erro) {
-                automato[instancia.estadoAtual].transicoes.forEach(transicao => {
-                    if (transicao.desempilha == instancia.pilha[instancia.pilha.length - 1] || transicao.desempilha == "") {
-                        if (palavra.value[i] == transicao.valor) {
-                            temp = new Instancia();
-                            temp.estadoAtual = transicao.destino;
-                            temp.pilha = [...instancia.pilha];
-                            if (transicao.desempilha != "") {
-                                temp.pilha.pop();
-                            }
-                            for (const char of transicao.empilha) {
-                                temp.pilha.push(char);
-                            }
-                            proximosEstados.push(temp);
-                            passou = true;
+function pop_instancia(instancia, desempilha) {
+    if (instancia.pilha[instancia.pilha.length - 1] == desempilha) {
+        instancia.pilha.pop();
+        return true;
+    }
+    return desempilha == "";
 
-                        } else if (transicao.valor == "") {
-                            temp_lanb = executa_lanbda(transicao, [...instancia.pilha]);
-                            if (temp_lanb.length != 0) {
-                                temp_lanb.forEach(proximo => {
-                                    proximosEstados.push(proximo);
-                                });
-                                passou = true;
-                                temp_lanb = [];
-                            }
+}
 
-                        }
-                    }
-                });
-                if (!passou) {
-                    instancia.erro = true;
+function push_instancia(instancia, empilha) {
+    for (const char of empilha) {
+        instancia.pilha.push(char);
+    }
+}
+
+function fecho(instancias) {
+    let aux;
+    for (let i = 0; i < instancias.length; i++) {
+        automato[instancias[i].estadoAtual].transicoes.forEach(transicao => {
+            if (transicao.valor == "") {
+                aux = new Instancia();
+                aux.estadoAtual = transicao.destino;
+                aux.pilha = [...instancias[i].pilha];
+                if (pop_instancia(aux, transicao.desempilha)) {
+                    push_instancia(instancias[i], transicao.empilha);
+                    instancias.push(aux);
+
                 }
-                passou = false;
             }
-
-        });
-
-        instancias = [];
-        let repete = false;
-        proximosEstados.forEach(proximo => {
-            instancias.forEach(inst => {
-                if (inst.estadoAtual == proximo.estadoAtual && inst.pilha.length === proximo.pilha.length) {
-                    if (inst.pilha.every((x, j) => proximo.pilha[j] == x)) {
-                        repete = true;
-                    }
-                }
-            });
-            if (!repete) {
-                instancias.push(new Instancia(proximo));
-            }
-            repete = false;
         });
     }
-
     return instancias;
 }
 
-function executa_lanbda(transicao, pilha) {
-    if (transicao.desempilha != "") {
-        pilha.pop();
+function executa_automato(passo) {
+    let instancias = [];
+    let temp = [];
+    instancias[0] = new Instancia();
+
+    for (let cont = -1; cont < passo; cont++) {
+        if (cont >= 0) {
+            for (let i = 0; i < instancias.length; i++) {
+                temp.push(...transisoes_validas(cont, instancias[i]));
+            }
+            instancias = [...temp];
+
+        } else {
+            instancias = fecho(instancias);
+        }
     }
-    for (const empilhado of transicao.empilha) {
-        pilha.push(empilhado);
-    }
+    return reduz_instancias(instancias);
+}
 
-    let proximosEstados = [];
-    let temp;
-    let temp_lanb = [];
-    automato[transicao.destino].transicoes.forEach(transicao2 => {
-        if (transicao2.desempilha == pilha[pilha.length - 1] || transicao2.desempilha == "") {
-
-            if (transicao2.valor == "") {
-
-                temp_lanb = executa_lanbda(transicao, [...pilha]);
-                if (temp_lanb.length != 0) {
-                    temp_lanb.forEach(proximo => {
-                        proximosEstados.push(proximo);
-                    });
-                    passou = true;
-                    temp_lanb = [];
+function reduz_instancias(instancias) {
+    let novo = [];
+    let repete = false;
+    for (let i = 0; i < instancias.length; i++) {
+        for (let j = i + 1; j < instancias.length; j++) {
+            if (instancias[i].estadoAtual == instancias[j].estadoAtual && instancias[i].pilha.length === instancias[j].pilha.length) {
+                if (instancias[i].pilha.every((x, k) => instancias[j].pilha[k] == x)) {
+                    repete = true;
                 }
-
-            } else if (transicao2.valor != "") {
-
-                temp = new Instancia();
-                temp.estadoAtual = transicao2.origem;
-                temp.pilha = [...pilha];
-                proximosEstados.push(temp);
-                passou = true;
-
             }
         }
-
-    });
-    return proximosEstados;
-
-
+        if (!repete) {
+            novo.push(instancias[i]);
+        }
+        repete = false;
+    }
+    return novo;
 }
 
 function testa_palavra() {
-    let palavra = document.getElementById("palavra");
-    let instancias = executa_automato(palavra.value.length - 1);
+    let palavra = document.getElementById("palavra").value;
+    let instancias = executa_automato(palavra.length - 1);
     aceita(instancias);
+
 }
 
 function desenha_etapa() {
+
     let palavra = document.getElementById("palavra");
     let instancias = [];
     if (iteradorDebug <= palavra.value.length - 1) {
-        if (iteradorDebug >= 0) {
-            instancias = executa_automato(iteradorDebug);
-        } else {
-            instancias[0] = new Instancia();
-        }
-        console.clear();
+        instancias = executa_automato(iteradorDebug);
+
         console.log(instancias);
 
         automato.forEach(estado => {
@@ -227,14 +201,12 @@ function desenha_etapa() {
         botao_evidencia(instancias);
         desenha(debugCtx);
         desenha_palavra();
-        desenha_botoes(debugCtx);
         desenha_pilha(instancias);
 
         if (iteradorDebug == palavra.value.length - 1) {
             aceita(instancias);
         }
     }
-
 }
 
 function aceita(instancias) {
@@ -273,89 +245,60 @@ function botao_evidencia(instancias) {
             form.appendChild(div);
         }
 
-    }
+    }/*else if (instancias.length > form.children.length){
+        let total = form.children.length;
+        for (let i = instancias.length; i < total; ++i) {
+            form.children[i].style.display = "nome";
+        }
+    }*/
 }
 
 function debuga_palavra() {
     palavra = document.getElementById("palavra");
     let form = document.getElementById("evidencia");
-    if (canvas.style.display == "block" && debugCanvas.style.display == "none") {
+    let divDebug = document.getElementById("debug");
+    let divCanvas = document.getElementById("canvas");
+    
+    if (divCanvas.style.display == "block" && divDebug.style.display == "none") {
         palavra.readOnly = true;
 
-        canvas.style.display = "none";
-        debugCanvas.style.display = "block";
+        divCanvas.style.display = "none";
+        divDebug.style.display = "inline-block";
         document.getElementById("resposta").innerText = "";
         iteradorDebug = -1;
         evidencia = 0;
 
         desenha_etapa();
+
     } else {
         palavra.readOnly = false;
 
-        canvas.style.display = "block";
-        debugCanvas.style.display = "none";
+        divCanvas.style.display = "block";
+        divDebug.style.display = "none";
         form.innerHTML = "";
         document.getElementById("resposta").innerText = "";
         desenha(ctx);
     }
 }
 
-function desenha_botoes(contexto) {
-    let text = "Anterior";
-    let x = 20;
-    let y = canvas.height - 20 - 50;
-    let width = 100;
-    let height = 50;
-    contexto.fillStyle = '#3498db';
-    contexto.fillRect(x, y, width, height);
-    contexto.fillStyle = 'black';
-    contexto.strokeRect(x, y, width, height);
-
-    contexto.fillStyle = 'white';
-    contexto.font = '20px Arial';
-    contexto.textAlign = 'center';
-    contexto.textBaseline = 'middle';
-    contexto.fillText(text, x + width / 2, y + height / 2);
-
-    text = "Proximo";
-    x += 110;
-    contexto.fillStyle = '#3498db';
-    contexto.fillRect(x, y, width, height);
-    contexto.fillStyle = 'black';
-    contexto.strokeRect(x, y, width, height);
-
-    contexto.fillStyle = 'white';
-    contexto.font = '20px Arial';
-    contexto.textAlign = 'center';
-    contexto.textBaseline = 'middle';
-    contexto.fillText(text, x + width / 2, y + height / 2);
+function anterior() {
+    if (iteradorDebug >= 0) {
+        iteradorDebug -= 1;
+        desenha_etapa();
+    }
 }
 
-debugCanvas.addEventListener("mousedown", function (e) {
-    tamanho = document.getElementById("palavra").value.length;
-    const mousePos = getMousePos(debugCanvas, e);
-
-    let left = 20;
-    let right = 120;
-    let topp = debugCanvas.height - 20 - 50;
-    let botton = debugCanvas.height - 20;
-    if (mousePos.x >= left && mousePos.x <= right && mousePos.y >= topp && mousePos.y <= botton) {
-        if (iteradorDebug >= 0) {
-            iteradorDebug -= 1;
-            desenha_etapa();
-        }
-    } else if (mousePos.x >= left + 110 && mousePos.x <= right + 110 && mousePos.y >= topp && mousePos.y <= botton) {
-        if (iteradorDebug < tamanho - 1) {
-            iteradorDebug++;
-            desenha_etapa();
-        }
+function proximo() {
+    if (iteradorDebug < document.getElementById("palavra").value.length - 1) {
+        iteradorDebug++;
+        desenha_etapa();
     }
-});
+}
 
 function desenha_palavra() {
     palavra = document.getElementById("palavra").value;
     let x = 20;
-    let y = canvas.height - 20 - 50 - 20;
+    let y = canvas.height - 20 - 20;
     debugCtx.font = "25px Arial";
     debugCtx.fillStyle = "black";
     debugCtx.textAlign = 'start';
@@ -372,7 +315,7 @@ function desenha_palavra() {
 }
 
 function desenha_pilha(instancias) {
-    let y = canvas.height - 20 - 50 - 20;
+    let y = canvas.height - 20 - 20;
 
     debugCtx.fillStyle = instancias[evidencia].cor;
     debugCtx.strokeStyle = instancias[evidencia].cor;
@@ -562,7 +505,6 @@ function desenha_transicao(contexto, x1, y1, x2, y2, valor) {
 
 }
 
-
 canvas.addEventListener("mousedown", function (e) {
     const mousePos = getMousePos(canvas, e);
     for (i = 0; i < automato.length; i++) {
@@ -575,7 +517,6 @@ canvas.addEventListener("mousedown", function (e) {
         }
     }
 });
-
 
 canvas.addEventListener("mouseup", function () {
     for (i = 0; i < automato.length; i++) {
