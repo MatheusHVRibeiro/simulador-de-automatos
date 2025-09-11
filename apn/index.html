@@ -18,14 +18,14 @@
             </button>
         </a>
 
-        <h1>Automatos De Pilha Não Deterministicos</h1><br>
+        <h1>Automatos De Pilha Não Deterministicos</h1>
 
         <table>
             <tr>
-                <td></td>
+                <td style="vertical-align: middle;text-align: center;"><h1>APN</h1></td>
                 <td>
                     <div id="menu" class="topbar">
-                        <input type="text" id="palavra">
+                        <input type="text" id="palavra" placeholder="Palavra">
                         <button onclick="testa_palavra()">testar palavra</button>
                         <button onclick="debuga_palavra()">debugar palavra</button>
                     </div>
@@ -34,23 +34,25 @@
             <tr>
                 <td>
                     <div class="sidebar">
-                        <button id="download" onclick="exportar()">Baixar APN</button>
                         <label for="uploadInput">Importar APN</label>
                         <input type="file" id="uploadInput" accept=".json" style="display: none;">
+                        <button id="download" onclick="exportar()">Baixar APN</button>
                         <button onclick="adiciona_estado(60,40)">Novo estado</button>
                         <button onclick="adiciona_transicao()">Nova transição</button>
                     </div>
                 </td>
-                <td>
-                    <div class="canvas" id="canvas">
-                        <h2 id="resposta"></h2>
-                        <canvas id="meuCanvas" width="800" height="400" style="display: block;"></canvas>
+                <td class="campo">
+                    <h2 id="resposta"></h2>
+
+                    <div id="canvas" style="display: block;">
+                        <canvas id="meuCanvas" width="800" height="400"></canvas>
                     </div>
-                    <div id="debug" class="debug" style="display: none;">
-                        <h2 id="resposta"></h2>
+
+                    <div id="debug" style="display: none;">
                         <canvas id="debugCanvas" class="dCanvas" width="800" height="400"></canvas><br>
                         <button onclick="anterior()">Anterior</button>
                         <button onclick="proximo()">Proximo</button>
+                        <p>Instancias:</p>
                         <form id="evidencia"></form>
                     </div>
                 </td>

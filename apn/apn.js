@@ -9,6 +9,8 @@ let evidencia;
 let pilha = [];
 let automato = [];
 
+let novaTransicao = null;
+
 class Instancia {
     constructor(instancia) {
         if (instancia != null) {
@@ -48,9 +50,9 @@ class Estado {
         this.transicoes = [];
         this.final = false;
     }
-    adiciona_transisao(i, valor, empilha, desempilha) {
+    adiciona_transisao(destino, valor, empilha, desempilha) {
 
-        this.transicoes.push(new Transicao(this.numero, i, valor, this.transicoes.length, empilha, desempilha));
+        this.transicoes.push(new Transicao(this.numero, destino, valor, this.transicoes.length, empilha, desempilha));
         desenha(ctx);
     }
     remove_transicao(i) {
@@ -144,15 +146,15 @@ function executa_automato(passo) {
     let temp = [];
     instancias[0] = new Instancia();
 
-    for (let cont = -1; cont < passo; cont++) {
-        if (cont >= 0) {
+    for (let cont = -1; cont <= passo; cont++) {
+        if(cont == -1){
+            instancias = fecho(instancias);
+        }else{
             for (let i = 0; i < instancias.length; i++) {
                 temp.push(...transisoes_validas(cont, instancias[i]));
             }
             instancias = [...temp];
-
-        } else {
-            instancias = fecho(instancias);
+            temp = [];
         }
     }
     return reduz_instancias(instancias);
@@ -203,7 +205,7 @@ function desenha_etapa() {
         desenha_palavra();
         desenha_pilha(instancias);
 
-        if (iteradorDebug == palavra.value.length - 1) {
+        if (iteradorDebug >= palavra.value.length - 1) {
             aceita(instancias);
         }
     }
@@ -258,7 +260,7 @@ function debuga_palavra() {
     let form = document.getElementById("evidencia");
     let divDebug = document.getElementById("debug");
     let divCanvas = document.getElementById("canvas");
-    
+
     if (divCanvas.style.display == "block" && divDebug.style.display == "none") {
         palavra.readOnly = true;
 
@@ -276,6 +278,7 @@ function debuga_palavra() {
         divCanvas.style.display = "block";
         divDebug.style.display = "none";
         form.innerHTML = "";
+        automato[evidencia].cor = "#00BFFF";
         document.getElementById("resposta").innerText = "";
         desenha(ctx);
     }
@@ -284,6 +287,8 @@ function debuga_palavra() {
 function anterior() {
     if (iteradorDebug >= 0) {
         iteradorDebug -= 1;
+        let form = document.getElementById("evidencia");
+        form.innerHTML = "";
         desenha_etapa();
     }
 }
@@ -355,78 +360,12 @@ function desenha(contexto) {
     contexto.textAlign = 'center';
     contexto.textBaseline = 'middle';
     for (i = 0; i < automato.length; i++) {
+        monta_transicoes(contexto, i);
         desenha_circulo(contexto, i);
     }
 }
 
 function desenha_circulo(contexto, i) {
-    ignorar = [];
-    automato[i].transicoes.forEach(transicao => {
-        if (!ignorar.includes(transicao.numero)) {
-            iguais = automato[i].transicoes.filter(objeto => objeto.destino == transicao.destino && objeto.numero !== transicao.numero);
-            let label = "";
-            let valor = "";
-            let empilha = "";
-            let desempilha = "";
-            if (iguais.length > 0) {
-                iguais.forEach(igual => {
-                    ignorar.push(igual.numero);
-                    if (igual.valor == "") {
-                        valor = "λ";
-                    } else {
-                        valor = igual.valor;
-                    }
-                    if (igual.desempilha == "") {
-                        desempilha = "λ";
-                    } else {
-                        desempilha = igual.desempilha;
-                    }
-                    if (igual.empilha == "") {
-                        empilha = "λ";
-                    } else {
-                        empilha = igual.empilha;
-                    }
-                    label += "(" + valor + "," + desempilha + "/" + empilha + "),";
-                });
-                if (transicao.valor == "") {
-                    valor = "λ";
-                } else {
-                    valor = transicao.valor;
-                }
-                if (transicao.desempilha == "") {
-                    desempilha = "λ";
-                } else {
-                    desempilha = transicao.desempilha;
-                }
-                if (transicao.empilha == "") {
-                    empilha = "λ";
-                } else {
-                    empilha = transicao.empilha;
-                }
-                label += "(" + valor + "," + desempilha + "/" + empilha + ")";
-                desenha_transicao(contexto, automato[i].x, automato[i].y, automato[transicao.destino].x, automato[transicao.destino].y, label);
-            } else {
-                if (transicao.valor == "") {
-                    valor = "λ";
-                } else {
-                    valor = transicao.valor;
-                }
-                if (transicao.desempilha == "") {
-                    desempilha = "λ";
-                } else {
-                    desempilha = transicao.desempilha;
-                }
-                if (transicao.empilha == "") {
-                    empilha = "λ";
-                } else {
-                    empilha = transicao.empilha;
-                }
-                label = valor + "," + desempilha + "/" + empilha;
-                desenha_transicao(contexto, automato[i].x, automato[i].y, automato[transicao.destino].x, automato[transicao.destino].y, label);
-            }
-        }
-    });
-
     let x = automato[i].x;
     let y = automato[i].y;
     contexto.beginPath();
@@ -463,6 +402,119 @@ function desenha_circulo(contexto, i) {
         contexto.lineTo(x - lado * 2, y);
         contexto.stroke();
     }
+}
+
+function adiciona_transicao() {
+    if (automato.length > 0) {
+        let x = window.innerWidth / 3;
+        let y = window.innerHeight / 3;
+
+        const menu = document.createElement("div");
+        menu.className = "menu";
+        menu.style.position = "absolute";
+        menu.style.backgroundColor = "white";
+        menu.style.border = "1px solid black";
+        menu.style.padding = "5px";
+        menu.style.left = x + "px";
+        menu.style.top = y + "px";
+        menu.style.display = "flex";
+        menu.style.flexDirection = "column";
+
+        let origem = document.createElement("input");
+        let destino = document.createElement("input");
+        let valor = document.createElement("input");
+        let empilha = document.createElement("input");
+        let desempilha = document.createElement("input");
+        let adciona = document.createElement("button");
+        origem.placeholder = "origem";
+        destino.placeholder = "destino";
+        valor.placeholder = "leitura";
+        empilha.placeholder = "empilha";
+        desempilha.placeholder = "desempilha";
+        adciona.innerText = "adcionar"
+        valor.size = 3;
+
+        adciona.addEventListener("click", function () {
+            if (origem.value != "" && Number(origem.value) >= 0 && Number(origem.value) < automato.length) {
+                if (destino.value != "" && Number(destino.value) >= 0 && Number(destino.value) < automato.length) {
+                    console.log(origem.value);
+                    console.log(destino.value);
+                    automato[origem.value].adiciona_transisao(destino.value, valor.value, empilha.value, desempilha.value);
+                    document.body.removeChild(menu);
+                    novaTransicao = null;
+                } else {
+                    alert("estado destino não existe");
+                }
+            } else {
+                alert("estado origem não existe");
+            }
+
+        });
+        menu.appendChild(origem);
+        menu.appendChild(destino);
+        menu.appendChild(valor);
+        menu.appendChild(desempilha);
+        menu.appendChild(empilha);
+        menu.appendChild(adciona);
+        document.body.appendChild(menu);
+    } else {
+        alert("é necessario existir pelo menos um estado");
+    }
+
+}
+
+function monta_transicoes(contexto, i) {
+    contexto.font = "12px Arial";
+    contexto.fillStyle = "black";
+
+    ignorar = [];
+    automato[i].transicoes.forEach(transicao => {
+        if (!ignorar.includes(transicao.numero)) {
+            iguais = automato[i].transicoes.filter(objeto => objeto.destino == transicao.destino && objeto.numero !== transicao.numero);
+            let label = "";
+            let valor = "";
+            let empilha = "";
+            let desempilha = "";
+            if (iguais.length > 0) {
+                iguais.forEach(igual => {
+                    ignorar.push(igual.numero);
+                    if (igual.valor == "") {
+                        valor = "λ";
+                    } else {
+                        valor = igual.valor;
+                    }
+                    if (igual.desempilha == "") {
+                        desempilha = "λ";
+                    } else {
+                        desempilha = igual.desempilha;
+                    }
+                    if (igual.empilha == "") {
+                        empilha = "λ";
+                    } else {
+                        empilha = igual.empilha;
+                    }
+                    label += "(" + valor + "," + desempilha + "/" + empilha + "),";
+                });
+            }
+            if (transicao.valor == "") {
+                valor = "λ";
+            } else {
+                valor = transicao.valor;
+            }
+            if (transicao.desempilha == "") {
+                desempilha = "λ";
+            } else {
+                desempilha = transicao.desempilha;
+            }
+            if (transicao.empilha == "") {
+                empilha = "λ";
+            } else {
+                empilha = transicao.empilha;
+            }
+            label += "(" + valor + "," + desempilha + "/" + empilha + ")";
+            desenha_transicao(contexto, automato[i].x, automato[i].y, automato[transicao.destino].x, automato[transicao.destino].y, label);
+        }
+    });
 }
 
 function desenha_transicao(contexto, x1, y1, x2, y2, valor) {
@@ -513,7 +565,42 @@ canvas.addEventListener("mousedown", function (e) {
         topp = automato[i].y - automato[i].raio;
         botton = automato[i].y + automato[i].raio;
         if (mousePos.x >= left && mousePos.x <= right && mousePos.y >= topp && mousePos.y <= botton) {
-            automato[i].isDragging = true;
+            if (novaTransicao !== null) {
+                const menu = document.createElement("div");
+                menu.className = "menu";
+                menu.style.position = "absolute";
+                menu.style.backgroundColor = "white";
+                menu.style.border = "1px solid black";
+                menu.style.padding = "5px";
+                menu.style.left = mousePos.x + "px";
+                menu.style.top = mousePos.y + "px";
+                menu.value = i;
+
+
+                let valor = document.createElement("input");
+                let empilha = document.createElement("input");
+                let desempilha = document.createElement("input");
+                let adciona = document.createElement("button");
+                valor.placeholder = "leitura";
+                empilha.placeholder = "empilha";
+                desempilha.placeholder = "desempilha";
+                adciona.innerText = "adcionar"
+                valor.size = 5;
+
+                adciona.addEventListener("click", function () {
+                    automato[novaTransicao].adiciona_transisao(menu.value, valor.value, empilha.value, desempilha.value);
+                    document.body.removeChild(menu);
+                    novaTransicao = null;
+                });
+                menu.appendChild(valor);
+                menu.appendChild(desempilha);
+                menu.appendChild(empilha);
+                menu.appendChild(adciona);
+                document.body.appendChild(menu);
+
+            } else {
+                automato[i].isDragging = true;
+            }
         }
     }
 });
@@ -524,7 +611,6 @@ canvas.addEventListener("mouseup", function () {
     }
 });
 
-
 canvas.addEventListener("mousemove", function (e) {
     for (i = 0; i < automato.length; i++) {
         if (automato[i].isDragging) {
@@ -533,6 +619,11 @@ canvas.addEventListener("mousemove", function (e) {
             automato[i].y = mousePos.y;
             desenha(ctx);
         }
+    }
+    if (novaTransicao !== null) {
+        let mousePos = getMousePos(canvas, e);
+        desenha(ctx);
+        desenha_transicao(ctx, automato[novaTransicao].x, automato[novaTransicao].y, mousePos.x, mousePos.y, "");
     }
 });
 
@@ -574,48 +665,44 @@ canvas.addEventListener("contextmenu", function (event) {
                 automato[final.value].torna_final();
             });
 
+            const removeEstado = document.createElement("button");
+            removeEstado.innerText = "remover estado";
+            removeEstado.value = i;
+            menu.appendChild(removeEstado);
+            removeEstado.addEventListener("click", function () {
+                automato.splice(removeEstado.value, 1);
+                automato.forEach(estado => {
+                    estado.transicoes.forEach(transicao => {
+                        if (transicao.destino == removeEstado.value) {
+                            estado.remove_transicao(transicao.numero);
+                        }
+                    });
+                });
+            });
+
             const adiciona = document.createElement("button");
             adiciona.innerText = "adicionar transicao";
             adiciona.value = i;
             menu.appendChild(adiciona);
             adiciona.addEventListener("click", function () {
-                let lista_de_estados = [];
-                valor = document.createElement("input");
-                empilha = document.createElement("input");
-                desempilha = document.createElement("input");
-                valor.placeholder = "valor";
-                empilha.placeholder = "empilha";
-                desempilha.placeholder = "desempilha";
-                valor.size = 3;
-                menu.appendChild(valor);
-                menu.appendChild(desempilha);
-                menu.appendChild(empilha);
-                for (j = 0; j < automato.length; j++) {
-                    lista_de_estados[j] = document.createElement("button");
-                    lista_de_estados[j].innerText = "S" + j;
-                    (function (indice) {
-                        lista_de_estados[j].addEventListener("click", function () {
-                            automato[adiciona.value].adiciona_transisao(indice, valor.value, empilha.value, desempilha.value);
-                        });
-                    })(j);
-                    menu.appendChild(lista_de_estados[j]);
-                }
+                novaTransicao = adiciona.value;
+                document.body.removeChild(menu);
             });
 
-            const remove = document.createElement("button");
-            remove.innerText = "remover transicao";
-            remove.value = i;
-            menu.appendChild(remove);
+            const removeTransicao = document.createElement("button");
+            removeTransicao.innerText = "remover transicao";
+            removeTransicao.value = i;
+            menu.appendChild(removeTransicao);
             menu.appendChild(document.createElement("br"));
-            remove.addEventListener("click", function () {
+            removeTransicao.addEventListener("click", function () {
                 let lista_de_estados = [];
                 let j = 0;
-                automato[remove.value].transicoes.forEach(transicao => {
+                automato[removeTransicao.value].transicoes.forEach(transicao => {
                     lista_de_estados[j] = document.createElement("button");
                     lista_de_estados[j].innerText = "S" + transicao.destino + "(" + transicao.valor + ")";
                     (function (indice) {
                         lista_de_estados[j].addEventListener("click", function () {
-                            automato[remove.value].remove_transicao(transicao.numero);
+                            automato[removeTransicao.value].remove_transicao(transicao.numero);
                         });
                     })(transicao.destino);
                     menu.appendChild(lista_de_estados[j]);
