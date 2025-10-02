@@ -3,6 +3,7 @@ const canvas = document.getElementById("meuCanvas");
 const ctx = canvas.getContext("2d");
 const debugCanvas = document.getElementById("debugCanvas");
 const debugCtx = debugCanvas.getContext("2d");
+let escala = 1;
 
 let iteradorDebug;
 let evidencia;
@@ -147,9 +148,9 @@ function executa_automato(passo) {
     instancias[0] = new Instancia();
 
     for (let cont = -1; cont <= passo; cont++) {
-        if(cont == -1){
+        if (cont == -1) {
             instancias = fecho(instancias);
-        }else{
+        } else {
             for (let i = 0; i < instancias.length; i++) {
                 temp.push(...transisoes_validas(cont, instancias[i]));
             }
@@ -348,10 +349,15 @@ function desenha_pilha(instancias) {
     debugCtx.fillStyle = 'black';
 }
 
-function getMousePos(canvas, event) {
+function getMousePos(canvas, e) {
+    const rect = canvas.getBoundingClientRect();
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
     return {
-        x: event.clientX - canvas.getBoundingClientRect().left,
-        y: event.clientY - canvas.getBoundingClientRect().top
+        x: mouseX / escala,
+        y: mouseY / escala
     };
 }
 
@@ -678,6 +684,7 @@ canvas.addEventListener("contextmenu", function (event) {
                         }
                     });
                 });
+                desenha(debugCtx);
             });
 
             const adiciona = document.createElement("button");
@@ -805,6 +812,42 @@ document.getElementById("uploadInput").addEventListener("change", function (even
     // Inicia a leitura do arquivo como texto
     reader.readAsText(file);
 });
+ 
+
+const slider = document.getElementById("zoom");
+
+slider.addEventListener("input", () => {
+    escala = slider.value / 100;
+    altera_zoom(escala);
+});
+
+canvas.addEventListener("wheel", (e) => {
+
+    if (e.deltaY < 0 && escala < 1.95  ) {
+        //scroll pra cima
+        escala = escala + 0.1;
+        altera_zoom(escala);
+        document.getElementById("zoom").value = escala*100;
+
+    } else if (escala > 0.35) {
+        //scroll pra baixo
+        escala = escala - 0.1;
+        altera_zoom(escala);
+        document.getElementById("zoom").value = escala*100;
+    }
+
+    // evita rolar a página junto
+    e.preventDefault();
+}, { passive: false });
+
+
+function altera_zoom(num) {
+    ctx.setTransform(num, 0, 0, num, 0, 0);
+    debugCtx.setTransform(num, 0, 0, num, 0, 0);
+    document.getElementById("%").innerText = Math.trunc(num * 100) + "%";
+    desenha(ctx);
+    desenha(debugCtx);
+}
 
 
 window.addEventListener('resize', resizeCanvas);

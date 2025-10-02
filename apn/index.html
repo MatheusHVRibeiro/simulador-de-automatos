@@ -22,12 +22,17 @@
 
         <table>
             <tr>
-                <td style="vertical-align: middle;text-align: center;"><h1>APN</h1></td>
+                <td style="vertical-align: middle;text-align: center;">
+                    <h1>APN</h1>
+                </td>
                 <td>
                     <div id="menu" class="topbar">
                         <input type="text" id="palavra" placeholder="Palavra">
                         <button onclick="testa_palavra()">testar palavra</button>
                         <button onclick="debuga_palavra()">debugar palavra</button>
+                        Zoom:
+                        <input type="range" id="zoom" min="30" max="200" step="10" value="100">
+                        <div id="%"></div>
                     </div>
                 </td>
             </tr>
